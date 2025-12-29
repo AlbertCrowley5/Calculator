@@ -1,0 +1,358 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.calculator-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.subtitle {
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+.mode-selector {
+    display: flex;
+    background: #f5f5f5;
+    padding: 10px;
+    gap: 5px;
+    overflow-x: auto;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 12px 15px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #666;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.mode-btn:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+}
+
+.mode-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.calculator-content {
+    padding: 30px;
+}
+
+.calculator-mode {
+    display: none;
+}
+
+.calculator-mode.active {
+    display: block;
+}
+
+/* Basic Calculator Styles */
+.display-container {
+    margin-bottom: 20px;
+}
+
+.display-history {
+    min-height: 30px;
+    padding: 5px 15px;
+    text-align: right;
+    color: #999;
+    font-size: 0.9em;
+}
+
+.display {
+    width: 100%;
+    padding: 20px;
+    font-size: 2em;
+    text-align: right;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: #f9f9f9;
+    font-family: 'Courier New', monospace;
+    outline: none;
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 20px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn.number {
+    background: #ffffff;
+    color: #333;
+    border: 2px solid #e0e0e0;
+}
+
+.btn.operator {
+    background: #f0f0f0;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn.function {
+    background: #764ba2;
+    color: white;
+}
+
+.btn.equals {
+    background: #667eea;
+    color: white;
+    font-size: 1.5em;
+}
+
+/* Equation Solver Styles */
+.input-section {
+    background: #f9f9f9;
+    padding: 25px;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+}
+
+.input-section label {
+    display: block;
+    margin-bottom: 10px;
+    color: #333;
+    font-weight: 600;
+}
+
+.equation-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1em;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.equation-input:focus {
+    border-color: #667eea;
+}
+
+.solve-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.solve-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+.solve-btn:active {
+    transform: translateY(0);
+}
+
+.solution-display {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f0f7ff;
+    border-left: 4px solid #667eea;
+    border-radius: 8px;
+    min-height: 50px;
+    display: none;
+}
+
+.solution-display.show {
+    display: block;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.solution-display h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.solution-display .result {
+    font-size: 1.5em;
+    color: #333;
+    font-weight: 600;
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+.steps {
+    margin-top: 20px;
+}
+
+.steps h4 {
+    color: #764ba2;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.step {
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #764ba2;
+    font-family: 'Courier New', monospace;
+    color: #333;
+}
+
+/* Quadratic Inputs */
+.quadratic-inputs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.input-group input {
+    padding: 12px;
+    font-size: 1.1em;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: #667eea;
+}
+
+.hint {
+    color: #666;
+    font-size: 0.9em;
+    margin: 10px 0 5px 0;
+    font-style: italic;
+}
+
+.footer {
+    background: #f5f5f5;
+    padding: 15px;
+    text-align: center;
+    color: #666;
+    font-size: 0.85em;
+    border-top: 1px solid #e0e0e0;
+}
+
+.error {
+    color: #e74c3c;
+    background: #ffeaea;
+    border-left-color: #e74c3c;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .header h1 {
+        font-size: 2em;
+    }
+
+    .button-grid {
+        gap: 8px;
+    }
+
+    .btn {
+        padding: 15px;
+        font-size: 1em;
+    }
+
+    .mode-selector {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .quadratic-inputs {
+        grid-template-columns: 1fr;
+    }
+}

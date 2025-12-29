@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="header">
+            <h1>Advanced Calculator</h1>
+            <p class="subtitle">Solve equations, quadratics, simultaneous equations & more</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="basic">Basic</button>
+            <button class="mode-btn" data-mode="equation">Equations</button>
+            <button class="mode-btn" data-mode="quadratic">Quadratic</button>
+            <button class="mode-btn" data-mode="simultaneous">Simultaneous</button>
+            <button class="mode-btn" data-mode="function">f(x)</button>
+        </div>
+
+        <div class="calculator-content">
+            <!-- Basic Calculator Mode -->
+            <div class="calculator-mode active" id="basic-mode">
+                <div class="display-container">
+                    <div class="display-history" id="history"></div>
+                    <input type="text" class="display" id="display" readonly placeholder="0">
+                </div>
+
+                <div class="button-grid">
+                    <button class="btn function" onclick="calculator.clear()">C</button>
+                    <button class="btn function" onclick="calculator.backspace()">⌫</button>
+                    <button class="btn function" onclick="calculator.appendToDisplay('(')">(</button>
+                    <button class="btn function" onclick="calculator.appendToDisplay(')')">)</button>
+
+                    <button class="btn function" onclick="calculator.appendToDisplay('sin(')">sin</button>
+                    <button class="btn function" onclick="calculator.appendToDisplay('cos(')">cos</button>
+                    <button class="btn function" onclick="calculator.appendToDisplay('tan(')">tan</button>
+                    <button class="btn operator" onclick="calculator.appendToDisplay('/')">/</button>
+
+                    <button class="btn number" onclick="calculator.appendToDisplay('7')">7</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('8')">8</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('9')">9</button>
+                    <button class="btn operator" onclick="calculator.appendToDisplay('*')">×</button>
+
+                    <button class="btn number" onclick="calculator.appendToDisplay('4')">4</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('5')">5</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('6')">6</button>
+                    <button class="btn operator" onclick="calculator.appendToDisplay('-')">-</button>
+
+                    <button class="btn number" onclick="calculator.appendToDisplay('1')">1</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('2')">2</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('3')">3</button>
+                    <button class="btn operator" onclick="calculator.appendToDisplay('+')">+</button>
+
+                    <button class="btn number" onclick="calculator.appendToDisplay('0')">0</button>
+                    <button class="btn number" onclick="calculator.appendToDisplay('.')">.</button>
+                    <button class="btn function" onclick="calculator.appendToDisplay('^')">^</button>
+                    <button class="btn equals" onclick="calculator.calculate()">=</button>
+                </div>
+            </div>
+
+            <!-- Equation Solver Mode -->
+            <div class="calculator-mode" id="equation-mode">
+                <div class="input-section">
+                    <label>Enter equation (e.g., 2x + 5 = 13 or x^2 - 4 = 0):</label>
+                    <input type="text" class="equation-input" id="equation-input" placeholder="2x + 5 = 13">
+                    <button class="solve-btn" onclick="calculator.solveEquation()">Solve</button>
+                </div>
+                <div class="solution-display" id="equation-solution"></div>
+            </div>
+
+            <!-- Quadratic Solver Mode -->
+            <div class="calculator-mode" id="quadratic-mode">
+                <div class="input-section">
+                    <label>Enter quadratic equation (ax² + bx + c = 0):</label>
+                    <div class="quadratic-inputs">
+                        <div class="input-group">
+                            <label>a:</label>
+                            <input type="text" id="quad-a" placeholder="1">
+                        </div>
+                        <div class="input-group">
+                            <label>b:</label>
+                            <input type="text" id="quad-b" placeholder="5">
+                        </div>
+                        <div class="input-group">
+                            <label>c:</label>
+                            <input type="text" id="quad-c" placeholder="6">
+                        </div>
+                    </div>
+                    <p class="hint">Or enter full equation:</p>
+                    <input type="text" class="equation-input" id="quad-equation" placeholder="x^2 + 5x + 6 = 0">
+                    <button class="solve-btn" onclick="calculator.solveQuadratic()">Solve Quadratic</button>
+                </div>
+                <div class="solution-display" id="quadratic-solution"></div>
+            </div>
+
+            <!-- Simultaneous Equations Mode -->
+            <div class="calculator-mode" id="simultaneous-mode">
+                <div class="input-section">
+                    <label>Enter two equations:</label>
+                    <input type="text" class="equation-input" id="sim-eq1" placeholder="2x + 3y = 13">
+                    <input type="text" class="equation-input" id="sim-eq2" placeholder="x - y = -1">
+                    <button class="solve-btn" onclick="calculator.solveSimultaneous()">Solve System</button>
+                </div>
+                <div class="solution-display" id="simultaneous-solution"></div>
+            </div>
+
+            <!-- Function Mode -->
+            <div class="calculator-mode" id="function-mode">
+                <div class="input-section">
+                    <label>Define function f(x):</label>
+                    <input type="text" class="equation-input" id="function-def" placeholder="x^2 + 2x + 1">
+                    <label>Evaluate at x =:</label>
+                    <input type="text" class="equation-input" id="function-x" placeholder="5">
+                    <button class="solve-btn" onclick="calculator.evaluateFunction()">Evaluate</button>
+                    <hr style="margin: 20px 0; border: 1px solid #e0e0e0;">
+                    <label>Solve f(x) = value:</label>
+                    <input type="text" class="equation-input" id="function-value" placeholder="0">
+                    <button class="solve-btn" onclick="calculator.solveFunctionEquation()">Solve for x</button>
+                </div>
+                <div class="solution-display" id="function-solution"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Supports multiple formats • Shows step-by-step solutions • All operations included</p>
+        </div>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
