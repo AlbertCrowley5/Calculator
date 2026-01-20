@@ -2,6 +2,7 @@ class Calculator {
     constructor() {
         this.currentInput = '';
         this.history = '';
+        this.previousAnswer = 0;
         this.initializeModeSwitching();
     }
 
@@ -71,6 +72,9 @@ class Calculator {
             document.getElementById('history').textContent = this.history + ' =';
             document.getElementById('display').value = result;
 
+            // Store result as previous answer
+            this.previousAnswer = result;
+
             // Set current input to result for chaining calculations
             this.currentInput = result.toString();
         } catch (error) {
@@ -79,6 +83,10 @@ class Calculator {
                 this.clear();
             }, 1500);
         }
+    }
+
+    insertAns() {
+        this.appendToDisplay(this.previousAnswer.toString());
     }
 
     // Equation Solver
