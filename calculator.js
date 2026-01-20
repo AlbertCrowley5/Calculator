@@ -624,16 +624,38 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Numbers and decimal point
         if (e.key >= '0' && e.key <= '9' || e.key === '.') {
             calculator.appendToDisplay(e.key);
-        } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+        }
+        // Basic operators
+        else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
             calculator.appendToDisplay(e.key);
-        } else if (e.key === 'Enter') {
+        }
+        // Parentheses
+        else if (e.key === '(' || e.key === ')') {
+            calculator.appendToDisplay(e.key);
+        }
+        // Power/exponent
+        else if (e.key === '^') {
+            calculator.appendToDisplay(e.key);
+        }
+        // Percentage
+        else if (e.key === '%') {
+            calculator.appendToDisplay(e.key);
+        }
+        // Enter to calculate
+        else if (e.key === 'Enter') {
             e.preventDefault();
             calculator.calculate();
-        } else if (e.key === 'Escape') {
+        }
+        // Escape to clear
+        else if (e.key === 'Escape') {
             calculator.clear();
-        } else if (e.key === 'Backspace') {
+        }
+        // Backspace to delete
+        else if (e.key === 'Backspace') {
+            e.preventDefault();
             calculator.backspace();
         }
     });
