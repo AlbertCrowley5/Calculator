@@ -46,6 +46,12 @@ class Calculator {
         document.getElementById('display').value = this.currentInput;
     }
 
+    // Handle text input for function names
+    handleTextInput(text) {
+        this.currentInput += text;
+        document.getElementById('display').value = this.currentInput;
+    }
+
     clear() {
         this.currentInput = '';
         this.history = '';
@@ -625,23 +631,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Numbers and decimal point
-        if (e.key >= '0' && e.key <= '9' || e.key === '.') {
+        if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
             calculator.appendToDisplay(e.key);
+        }
+        // Letters (for function names like sin, cos, log, etc.)
+        else if ((e.key >= 'a' && e.key <= 'z') || (e.key >= 'A' && e.key <= 'Z')) {
+            calculator.appendToDisplay(e.key.toLowerCase());
         }
         // Basic operators
         else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
             calculator.appendToDisplay(e.key);
         }
-        // Parentheses
-        else if (e.key === '(' || e.key === ')') {
+        // Parentheses and brackets
+        else if (e.key === '(' || e.key === ')' || e.key === '[' || e.key === ']' || e.key === '{' || e.key === '}') {
             calculator.appendToDisplay(e.key);
         }
         // Power/exponent
         else if (e.key === '^') {
             calculator.appendToDisplay(e.key);
         }
+        // Comma (for function arguments like nthRoot(8, 3))
+        else if (e.key === ',') {
+            calculator.appendToDisplay(e.key);
+        }
         // Percentage
         else if (e.key === '%') {
+            calculator.appendToDisplay(e.key);
+        }
+        // Space (optional, for readability)
+        else if (e.key === ' ') {
             calculator.appendToDisplay(e.key);
         }
         // Enter to calculate
