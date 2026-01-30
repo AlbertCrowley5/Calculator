@@ -630,12 +630,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Ignore modifier keys and special keys
+        if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta' ||
+            e.key === 'CapsLock' || e.key === 'Tab' || e.key.startsWith('Arrow') ||
+            e.key === 'Insert' || e.key === 'Delete' || e.key === 'Home' || e.key === 'End' ||
+            e.key === 'PageUp' || e.key === 'PageDown' || e.key.startsWith('F')) {
+            return;
+        }
+
+        // Enter to calculate
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            calculator.calculate();
+        }
+        // Escape to clear
+        else if (e.key === 'Escape') {
+            calculator.clear();
+        }
+        // Backspace to delete
+        else if (e.key === 'Backspace') {
+            e.preventDefault();
+            calculator.backspace();
+        }
         // Numbers and decimal point
-        if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
+        else if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
             calculator.appendToDisplay(e.key);
         }
-        // Letters (for function names like sin, cos, log, etc.)
-        else if ((e.key >= 'a' && e.key <= 'z') || (e.key >= 'A' && e.key <= 'Z')) {
+        // Single letter characters only (for function names like sin, cos, log, etc.)
+        else if (e.key.length === 1 && ((e.key >= 'a' && e.key <= 'z') || (e.key >= 'A' && e.key <= 'Z'))) {
             calculator.appendToDisplay(e.key.toLowerCase());
         }
         // Basic operators
@@ -661,20 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Space (optional, for readability)
         else if (e.key === ' ') {
             calculator.appendToDisplay(e.key);
-        }
-        // Enter to calculate
-        else if (e.key === 'Enter') {
-            e.preventDefault();
-            calculator.calculate();
-        }
-        // Escape to clear
-        else if (e.key === 'Escape') {
-            calculator.clear();
-        }
-        // Backspace to delete
-        else if (e.key === 'Backspace') {
-            e.preventDefault();
-            calculator.backspace();
         }
     });
 
