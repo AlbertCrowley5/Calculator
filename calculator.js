@@ -3,6 +3,8 @@ class Calculator {
         this.currentInput = '';
         this.history = '';
         this.previousAnswer = 0;
+        this.lastResult = null; // Store exact numeric result
+        this.isResultDisplayed = false; // Track if showing a result
         this.initializeModeSwitching();
     }
 
@@ -42,7 +44,20 @@ class Calculator {
     }
 
     appendToDisplay(value) {
-        this.currentInput += value;
+        // If a result is displayed and user types an operator, continue from result
+        if (this.isResultDisplayed && (value === '+' || value === '-' || value === '*' || value === '/' || value === '^')) {
+            this.currentInput = this.formatNumberForCalculation(this.lastResult) + value;
+            this.isResultDisplayed = false;
+        }
+        // If a result is displayed and user types anything else, start fresh
+        else if (this.isResultDisplayed) {
+            this.currentInput = value;
+            this.isResultDisplayed = false;
+        }
+        // Normal append
+        else {
+            this.currentInput += value;
+        }
         document.getElementById('display').value = this.currentInput;
     }
 
@@ -55,12 +70,42 @@ class Calculator {
     clear() {
         this.currentInput = '';
         this.history = '';
+        this.lastResult = null;
+        this.isResultDisplayed = false;
         document.getElementById('display').value = '';
         document.getElementById('history').textContent = '';
     }
 
+    // Format number for calculation (full precision)
+    formatNumberForCalculation(num) {
+        if (num === null || num === undefined) return '0';
+        // Use maximum precision
+        return num.toPrecision(15);
+    }
+
+    // Format number for display (rounded to remove floating point errors)
+    formatNumberForDisplay(num) {
+        if (num === null || num === undefined) return '0';
+
+        // Round to 12 significant figures to remove floating point errors
+        const rounded = parseFloat(num.toPrecision(12));
+
+        // If the number is very close to an integer, show it as an integer
+        if (Math.abs(rounded - Math.round(rounded)) < 1e-10) {
+            return Math.round(rounded).toString();
+        }
+
+        return rounded.toString();
+    }
+
     backspace() {
-        this.currentInput = this.currentInput.slice(0, -1);
+        // If showing a result, clear it completely on first backspace
+        if (this.isResultDisplayed) {
+            this.currentInput = '';
+            this.isResultDisplayed = false;
+        } else {
+            this.currentInput = this.currentInput.slice(0, -1);
+        }
         document.getElementById('display').value = this.currentInput;
     }
 
@@ -71,20 +116,26 @@ class Calculator {
             // Store history
             this.history = this.currentInput;
 
-            // Evaluate expression using math.js
+            // Evaluate expression using math.js (exact calculation)
             const result = math.evaluate(this.currentInput);
+
+            // Store exact result
+            this.lastResult = result;
+            this.previousAnswer = result;
+            this.isResultDisplayed = true;
+
+            // Display rounded result
+            const displayValue = this.formatNumberForDisplay(result);
 
             // Update display
             document.getElementById('history').textContent = this.history + ' =';
-            document.getElementById('display').value = result;
+            document.getElementById('display').value = displayValue;
 
-            // Store result as previous answer
-            this.previousAnswer = result;
-
-            // Set current input to result for chaining calculations
-            this.currentInput = result.toString();
+            // Store display value as current input (but we'll use lastResult for calculations)
+            this.currentInput = displayValue;
         } catch (error) {
             document.getElementById('display').value = 'Error';
+            this.isResultDisplayed = false;
             setTimeout(() => {
                 this.clear();
             }, 1500);
@@ -92,7 +143,9 @@ class Calculator {
     }
 
     insertAns() {
-        this.appendToDisplay(this.previousAnswer.toString());
+        // Use full precision when inserting ANS
+        const ansValue = this.formatNumberForCalculation(this.previousAnswer);
+        this.appendToDisplay(ansValue);
     }
 
     // Equation Solver
