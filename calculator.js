@@ -3,7 +3,8 @@ class Calculator {
         this.currentInput = '';
         this.history = '';
         this.previousAnswer = 0;
-        this.lastResult = null; // Store exact numeric result
+        this.lastResult = null; // Store exact numeric result for backward compatibility
+        this.lastResultExpression = null; // Store exact symbolic expression
         this.isResultDisplayed = false; // Track if showing a result
         this.initializeModeSwitching();
     }
@@ -44,9 +45,14 @@ class Calculator {
     }
 
     appendToDisplay(value) {
-        // If a result is displayed and user types an operator, continue from result
+        // If a result is displayed and user types an operator, continue from exact result
         if (this.isResultDisplayed && (value === '+' || value === '-' || value === '*' || value === '/' || value === '^')) {
-            this.currentInput = this.formatNumberForCalculation(this.lastResult) + value;
+            // Use the exact symbolic expression if available
+            if (this.lastResultExpression) {
+                this.currentInput = '(' + this.lastResultExpression + ')' + value;
+            } else {
+                this.currentInput = this.formatNumberForCalculation(this.lastResult) + value;
+            }
             this.isResultDisplayed = false;
         }
         // If a result is displayed and user types anything else, start fresh
@@ -71,6 +77,7 @@ class Calculator {
         this.currentInput = '';
         this.history = '';
         this.lastResult = null;
+        this.lastResultExpression = null;
         this.isResultDisplayed = false;
         document.getElementById('display').value = '';
         document.getElementById('history').textContent = '';
@@ -116,7 +123,18 @@ class Calculator {
             // Store history
             this.history = this.currentInput;
 
-            // Evaluate expression using math.js (exact calculation)
+            // Try to simplify symbolically first to keep exact form
+            let symbolicResult;
+            try {
+                symbolicResult = math.simplify(this.currentInput);
+                // Store the exact symbolic expression as a string
+                this.lastResultExpression = symbolicResult.toString();
+            } catch (e) {
+                // If symbolic simplification fails, we'll just use the original expression
+                this.lastResultExpression = this.currentInput;
+            }
+
+            // Evaluate to numeric for display
             const result = math.evaluate(this.currentInput);
 
             // Store exact result
@@ -131,11 +149,12 @@ class Calculator {
             document.getElementById('history').textContent = this.history + ' =';
             document.getElementById('display').value = displayValue;
 
-            // Store display value as current input (but we'll use lastResult for calculations)
+            // Store display value as current input (but we'll use symbolic expression for calculations)
             this.currentInput = displayValue;
         } catch (error) {
             document.getElementById('display').value = 'Error';
             this.isResultDisplayed = false;
+            this.lastResultExpression = null;
             setTimeout(() => {
                 this.clear();
             }, 1500);
@@ -143,9 +162,13 @@ class Calculator {
     }
 
     insertAns() {
-        // Use full precision when inserting ANS
-        const ansValue = this.formatNumberForCalculation(this.previousAnswer);
-        this.appendToDisplay(ansValue);
+        // Use exact symbolic expression if available, otherwise use numeric value
+        if (this.lastResultExpression) {
+            this.appendToDisplay('(' + this.lastResultExpression + ')');
+        } else {
+            const ansValue = this.formatNumberForCalculation(this.previousAnswer);
+            this.appendToDisplay(ansValue);
+        }
     }
 
     // Equation Solver
