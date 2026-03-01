@@ -171,7 +171,7 @@ class Calculator {
         }
     }
 
-    // Unified Equation Solver — handles linear, quadratic, and higher-degree equations
+    // Unified Equation Solver — handles linear, quadratic, cubic, and higher-degree equations
     solveEquation() {
         const equationInput = document.getElementById('equation-input').value.trim();
         const solutionDiv = document.getElementById('equation-solution');
@@ -202,54 +202,66 @@ class Calculator {
             const steps = [];
             let solutions = [];
 
-            steps.push(`Equation: ${leftSide} = ${rightSide}`);
+            steps.push(`📝 Original Equation: ${leftSide} = ${rightSide}`);
+            steps.push(`🔄 Rearranged: ${leftSide} - (${rightSide}) = 0`);
 
             if (this.isLinear(expression, variable)) {
-                // Linear equation
-                steps.push(`Type: Linear`);
+                // Linear equation: ax + b = 0
+                steps.push(`📊 Equation Type: Linear`);
                 const solution = this.solveLinear(leftSide, rightSide, variable);
                 solutions.push(solution);
-                steps.push(`${variable} = ${solution}`);
+                steps.push(`✅ Solution: ${variable} = ${this.formatNumberForDisplay(solution)}`);
 
             } else if (this.isQuadratic(expression, variable)) {
-                // Quadratic — use exact quadratic formula
-                steps.push(`Type: Quadratic`);
+                // Quadratic: ax² + bx + c = 0
+                steps.push(`📊 Equation Type: Quadratic`);
                 const coeffs = this.extractQuadraticCoeffs(expression, variable);
                 const { a, b, c } = coeffs;
 
-                steps.push(`Standard form: ${a}${variable}² + ${b}${variable} + ${c} = 0`);
-                steps.push(`Quadratic formula: ${variable} = (-b ± √(b² − 4ac)) / 2a`);
+                steps.push(`📐 Standard form: ${this.formatCoeff(a)}${variable}² + ${this.formatCoeff(b, true)}${variable} + ${this.formatCoeff(c, true)} = 0`);
+                steps.push(`📐 Coefficients: a = ${this.formatNumberForDisplay(a)}, b = ${this.formatNumberForDisplay(b)}, c = ${this.formatNumberForDisplay(c)}`);
+                steps.push(`📋 Quadratic formula: ${variable} = (-b ± √(b² - 4ac)) / (2a)`);
 
                 const discriminant = b * b - 4 * a * c;
-                steps.push(`Discriminant: Δ = ${b}² − 4(${a})(${c}) = ${discriminant}`);
+                steps.push(`🔢 Discriminant: Δ = b² - 4ac = (${this.formatNumberForDisplay(b)})² - 4(${this.formatNumberForDisplay(a)})(${this.formatNumberForDisplay(c)}) = ${this.formatNumberForDisplay(discriminant)}`);
 
                 if (discriminant > 0) {
-                    steps.push(`Δ > 0: Two distinct real solutions`);
+                    steps.push(`✅ Δ > 0: Two distinct real solutions`);
                     const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
                     const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-                    steps.push(`${variable}₁ = ${this.formatNumberForDisplay(x1)}`);
-                    steps.push(`${variable}₂ = ${this.formatNumberForDisplay(x2)}`);
+                    steps.push(`🎯 ${variable}₁ = (-${this.formatNumberForDisplay(b)} + √${this.formatNumberForDisplay(discriminant)}) / (2·${this.formatNumberForDisplay(a)}) = ${this.formatNumberForDisplay(x1)}`);
+                    steps.push(`🎯 ${variable}₂ = (-${this.formatNumberForDisplay(b)} - √${this.formatNumberForDisplay(discriminant)}) / (2·${this.formatNumberForDisplay(a)}) = ${this.formatNumberForDisplay(x2)}`);
                     solutions.push(x1, x2);
                 } else if (discriminant === 0) {
-                    steps.push(`Δ = 0: One repeated solution`);
+                    steps.push(`✅ Δ = 0: One repeated real solution`);
                     const x = -b / (2 * a);
-                    steps.push(`${variable} = ${this.formatNumberForDisplay(x)}`);
+                    steps.push(`🎯 ${variable} = -${this.formatNumberForDisplay(b)} / (2·${this.formatNumberForDisplay(a)}) = ${this.formatNumberForDisplay(x)}`);
                     solutions.push(x);
                 } else {
-                    steps.push(`Δ < 0: Two complex solutions`);
+                    steps.push(`❌ Δ < 0: No real solutions (two complex solutions)`);
                     const realPart = this.formatNumberForDisplay(-b / (2 * a));
                     const imagPart = this.formatNumberForDisplay(Math.sqrt(-discriminant) / (2 * a));
-                    solutions.push(`${realPart} + ${imagPart}i`, `${realPart} − ${imagPart}i`);
+                    steps.push(`🔢 Complex solutions:`);
+                    steps.push(`   ${variable}₁ = ${realPart} + ${imagPart}i`);
+                    steps.push(`   ${variable}₂ = ${realPart} - ${imagPart}i`);
+                    solutions.push(`${realPart} + ${imagPart}i`, `${realPart} - ${imagPart}i`);
                 }
 
                 // Vertex
                 const h = this.formatNumberForDisplay(-b / (2 * a));
                 const k = this.formatNumberForDisplay(a * (-b / (2 * a)) ** 2 + b * (-b / (2 * a)) + c);
-                steps.push(`Vertex: (${h}, ${k})`);
+                steps.push(`📍 Vertex: (${h}, ${k})`);
+
+            } else if (this.isCubic(expression, variable)) {
+                // Cubic: ax³ + bx² + cx + d = 0
+                steps.push(`📊 Equation Type: Cubic`);
+                const result = this.solveCubic(expression, variable, steps);
+                solutions = result.solutions;
 
             } else {
                 // Higher-degree / transcendental — numerical methods
-                steps.push(`Type: Non-linear (numerical method)`);
+                steps.push(`📊 Equation Type: Higher-degree (using numerical methods)`);
+                steps.push(`🔍 Searching for real solutions...`);
                 const startPoints = [-100, -10, -5, -2, -1, -0.5, 0, 0.5, 1, 2, 5, 10, 100];
                 const foundSolutions = new Set();
 
@@ -261,8 +273,11 @@ class Calculator {
                 }
 
                 solutions = Array.from(foundSolutions);
-                if (solutions.length === 0) throw new Error('No solutions found');
-                steps.push(`Found ${solutions.length} solution(s):`);
+                if (solutions.length === 0) {
+                    steps.push(`❌ No real solutions found`);
+                    throw new Error('No real solutions found');
+                }
+                steps.push(`✅ Found ${solutions.length} real solution(s)`);
             }
 
             this.displaySolution(solutionDiv, solutions, steps, variable);
@@ -270,6 +285,15 @@ class Calculator {
         } catch (error) {
             this.showError(solutionDiv, error.message);
         }
+    }
+
+    // Helper to format coefficient with sign
+    formatCoeff(val, includeSign = false) {
+        const num = this.formatNumberForDisplay(val);
+        if (includeSign) {
+            return val >= 0 ? `+ ${num}` : `- ${Math.abs(val)}`;
+        }
+        return num;
     }
 
     // Extract a, b, c coefficients directly from a quadratic expression
@@ -458,6 +482,111 @@ class Calculator {
                !expression.includes('sin') && !expression.includes('cos') &&
                !expression.includes('tan') && !expression.includes('log') &&
                !expression.includes('sqrt');
+    }
+
+    isCubic(expression, variable) {
+        // Has x^3 but not x^4 or higher, and no trig/log functions
+        const cubic = new RegExp(`${variable}\\s*\\^\\s*3`, 'i');
+        const quartic = new RegExp(`${variable}\\s*\\^\\s*[4-9]`, 'i');
+        return cubic.test(expression) && !quartic.test(expression) &&
+               !expression.includes('sin') && !expression.includes('cos') &&
+               !expression.includes('tan') && !expression.includes('log') &&
+               !expression.includes('sqrt');
+    }
+
+    // Solve cubic equation ax³ + bx² + cx + d = 0
+    solveCubic(expression, variable, steps) {
+        const coeffs = this.extractCubicCoeffs(expression, variable);
+        const { a, b, c, d } = coeffs;
+
+        steps.push(`📐 Standard form: ${this.formatCoeff(a)}${variable}³ + ${this.formatCoeff(b, true)}${variable}² + ${this.formatCoeff(c, true)}${variable} + ${this.formatCoeff(d, true)} = 0`);
+        steps.push(`📐 Coefficients: a = ${this.formatNumberForDisplay(a)}, b = ${this.formatNumberForDisplay(b)}, c = ${this.formatNumberForDisplay(c)}, d = ${this.formatNumberForDisplay(d)}`);
+
+        // Normalize to x³ + px + q form using substitution x = t - b/(3a)
+        const p = (3 * a * c - b * b) / (3 * a * a);
+        const q = (2 * b * b * b - 9 * a * b * c + 27 * a * a * d) / (27 * a * a * a);
+
+        steps.push(`🔄 Reducing to depressed cubic: t³ + pt + q = 0`);
+        steps.push(`   where ${variable} = t - ${this.formatNumberForDisplay(b / (3 * a))}`);
+        steps.push(`   p = ${this.formatNumberForDisplay(p)}, q = ${this.formatNumberForDisplay(q)}`);
+
+        // Calculate discriminant
+        const discriminant = -(4 * p * p * p + 27 * q * q);
+        steps.push(`🔢 Discriminant: Δ = -(4p³ + 27q²) = ${this.formatNumberForDisplay(discriminant)}`);
+
+        const solutions = [];
+
+        if (Math.abs(discriminant) < 1e-10) {
+            // One or two real roots
+            if (Math.abs(p) < 1e-10 && Math.abs(q) < 1e-10) {
+                steps.push(`✅ Triple root (all three roots are equal)`);
+                const x = -b / (3 * a);
+                solutions.push(x);
+                steps.push(`🎯 ${variable} = ${this.formatNumberForDisplay(x)}`);
+            } else {
+                steps.push(`✅ Δ = 0: One single root and one double root`);
+                const t1 = (3 * q) / p;
+                const t2 = (-3 * q) / (2 * p);
+                const x1 = t1 - b / (3 * a);
+                const x2 = t2 - b / (3 * a);
+                solutions.push(x1, x2, x2);
+                steps.push(`🎯 ${variable}₁ = ${this.formatNumberForDisplay(x1)}`);
+                steps.push(`🎯 ${variable}₂ = ${variable}₃ = ${this.formatNumberForDisplay(x2)}`);
+            }
+        } else if (discriminant > 0) {
+            // Three distinct real roots (use trigonometric method)
+            steps.push(`✅ Δ > 0: Three distinct real solutions`);
+            const m = 2 * Math.sqrt(-p / 3);
+            const theta = Math.acos((3 * q) / (p * m)) / 3;
+
+            for (let k = 0; k < 3; k++) {
+                const t = m * Math.cos(theta - (2 * Math.PI * k) / 3);
+                const x = t - b / (3 * a);
+                solutions.push(x);
+                steps.push(`🎯 ${variable}${k + 1} = ${this.formatNumberForDisplay(x)}`);
+            }
+        } else {
+            // One real root and two complex conjugate roots
+            steps.push(`❌ Δ < 0: One real solution, two complex solutions`);
+
+            // Cardano's formula for the real root
+            const sqrtD = Math.sqrt(-discriminant / 108);
+            const u = Math.cbrt(-q / 2 + sqrtD);
+            const v = Math.cbrt(-q / 2 - sqrtD);
+            const t = u + v;
+            const x_real = t - b / (3 * a);
+
+            solutions.push(x_real);
+            steps.push(`🎯 Real solution: ${variable} = ${this.formatNumberForDisplay(x_real)}`);
+
+            // Complex roots
+            const realPart = this.formatNumberForDisplay(-(u + v) / 2 - b / (3 * a));
+            const imagPart = this.formatNumberForDisplay(Math.sqrt(3) * (u - v) / 2);
+            steps.push(`🔢 Complex solutions:`);
+            steps.push(`   ${variable}₂ = ${realPart} + ${imagPart}i`);
+            steps.push(`   ${variable}₃ = ${realPart} - ${imagPart}i`);
+            solutions.push(`${realPart} + ${imagPart}i`, `${realPart} - ${imagPart}i`);
+        }
+
+        return { solutions };
+    }
+
+    // Extract a, b, c, d coefficients from cubic expression
+    extractCubicCoeffs(expression, variable) {
+        const f = (v) => math.evaluate(expression, { [variable]: v });
+
+        // Evaluate at four points to determine a, b, c, d from ax³+bx²+cx+d
+        const f0 = f(0);   // d
+        const f1 = f(1);   // a + b + c + d
+        const fm1 = f(-1); // -a + b - c + d
+        const f2 = f(2);   // 8a + 4b + 2c + d
+
+        const d = f0;
+        const a = (f2 - 3*f1 + 3*f0 - fm1) / 6;
+        const b = (f1 + fm1 - 2*f0) / 2 - 3*a;
+        const c = f1 - a - b - d;
+
+        return { a, b, c, d };
     }
 
     solveLinear(leftSide, rightSide, variable) {
@@ -692,8 +821,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (mode === 'equation-mode') {
                     calculator.solveEquation();
-                } else if (mode === 'quadratic-mode') {
-                    calculator.solveQuadratic();
                 } else if (mode === 'simultaneous-mode') {
                     calculator.solveSimultaneous();
                 }
