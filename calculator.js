@@ -171,7 +171,7 @@ class Calculator {
         }
     }
 
-    // Equation Solver
+    // Unified Equation Solver — handles linear, quadratic, and higher-degree equations
     solveEquation() {
         const equationInput = document.getElementById('equation-input').value.trim();
         const solutionDiv = document.getElementById('equation-solution');
@@ -182,77 +182,87 @@ class Calculator {
         }
 
         try {
-            // Parse the equation
             let equation = equationInput.replace(/\s/g, '');
 
-            // Split by equals sign
             const parts = equation.split('=');
             if (parts.length !== 2) {
                 throw new Error('Equation must contain exactly one = sign');
             }
 
-            // Rearrange to form: leftSide - rightSide = 0
             const leftSide = parts[0];
             const rightSide = parts[1];
             const expression = `${leftSide} - (${rightSide})`;
 
-            // Find the variable (assuming x, but could be other)
             const variables = this.findVariables(expression);
             if (variables.length === 0) {
                 throw new Error('No variable found in equation');
             }
             const variable = variables[0];
 
-            // Solve using nsolve for numerical solution
-            let solutions = [];
             const steps = [];
+            let solutions = [];
 
-            steps.push(`Original equation: ${leftSide} = ${rightSide}`);
-            steps.push(`Rearranged: ${expression} = 0`);
+            steps.push(`Equation: ${leftSide} = ${rightSide}`);
 
-            try {
-                // Try symbolic solving first
-                const symbolicSolution = math.simplify(expression);
-                steps.push(`Simplified: ${symbolicSolution.toString()} = 0`);
+            if (this.isLinear(expression, variable)) {
+                // Linear equation
+                steps.push(`Type: Linear`);
+                const solution = this.solveLinear(leftSide, rightSide, variable);
+                solutions.push(solution);
+                steps.push(`${variable} = ${solution}`);
 
-                // Try to solve algebraically
-                // For linear equations
-                if (this.isLinear(expression, variable)) {
-                    const solution = this.solveLinear(leftSide, rightSide, variable);
-                    solutions.push(solution);
-                    steps.push(`Solving for ${variable}: ${variable} = ${solution}`);
+            } else if (this.isQuadratic(expression, variable)) {
+                // Quadratic — use exact quadratic formula
+                steps.push(`Type: Quadratic`);
+                const coeffs = this.extractQuadraticCoeffs(expression, variable);
+                const { a, b, c } = coeffs;
+
+                steps.push(`Standard form: ${a}${variable}² + ${b}${variable} + ${c} = 0`);
+                steps.push(`Quadratic formula: ${variable} = (-b ± √(b² − 4ac)) / 2a`);
+
+                const discriminant = b * b - 4 * a * c;
+                steps.push(`Discriminant: Δ = ${b}² − 4(${a})(${c}) = ${discriminant}`);
+
+                if (discriminant > 0) {
+                    steps.push(`Δ > 0: Two distinct real solutions`);
+                    const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                    const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                    steps.push(`${variable}₁ = ${this.formatNumberForDisplay(x1)}`);
+                    steps.push(`${variable}₂ = ${this.formatNumberForDisplay(x2)}`);
+                    solutions.push(x1, x2);
+                } else if (discriminant === 0) {
+                    steps.push(`Δ = 0: One repeated solution`);
+                    const x = -b / (2 * a);
+                    steps.push(`${variable} = ${this.formatNumberForDisplay(x)}`);
+                    solutions.push(x);
                 } else {
-                    // Try numerical solving for non-linear
-                    // Try multiple starting points
-                    const startPoints = [-10, -1, 0, 1, 10];
-                    const foundSolutions = new Set();
+                    steps.push(`Δ < 0: Two complex solutions`);
+                    const realPart = this.formatNumberForDisplay(-b / (2 * a));
+                    const imagPart = this.formatNumberForDisplay(Math.sqrt(-discriminant) / (2 * a));
+                    solutions.push(`${realPart} + ${imagPart}i`, `${realPart} − ${imagPart}i`);
+                }
 
-                    for (let start of startPoints) {
-                        try {
-                            const scope = {};
-                            scope[variable] = start;
-                            const sol = this.newtonRaphson(expression, variable, start);
-                            if (sol !== null && !isNaN(sol)) {
-                                // Round to avoid duplicates
-                                const rounded = Math.round(sol * 1e10) / 1e10;
-                                foundSolutions.add(rounded);
-                            }
-                        } catch (e) {
-                            // Continue to next starting point
-                        }
-                    }
+                // Vertex
+                const h = this.formatNumberForDisplay(-b / (2 * a));
+                const k = this.formatNumberForDisplay(a * (-b / (2 * a)) ** 2 + b * (-b / (2 * a)) + c);
+                steps.push(`Vertex: (${h}, ${k})`);
 
-                    solutions = Array.from(foundSolutions);
-                    if (solutions.length > 0) {
-                        steps.push(`Found solution(s) using numerical methods:`);
+            } else {
+                // Higher-degree / transcendental — numerical methods
+                steps.push(`Type: Non-linear (numerical method)`);
+                const startPoints = [-100, -10, -5, -2, -1, -0.5, 0, 0.5, 1, 2, 5, 10, 100];
+                const foundSolutions = new Set();
+
+                for (const start of startPoints) {
+                    const sol = this.newtonRaphson(expression, variable, start);
+                    if (sol !== null && !isNaN(sol) && isFinite(sol)) {
+                        foundSolutions.add(Math.round(sol * 1e10) / 1e10);
                     }
                 }
-            } catch (e) {
-                throw new Error('Could not solve equation: ' + e.message);
-            }
 
-            if (solutions.length === 0) {
-                throw new Error('No solutions found');
+                solutions = Array.from(foundSolutions);
+                if (solutions.length === 0) throw new Error('No solutions found');
+                steps.push(`Found ${solutions.length} solution(s):`);
             }
 
             this.displaySolution(solutionDiv, solutions, steps, variable);
@@ -262,72 +272,17 @@ class Calculator {
         }
     }
 
-    // Quadratic Solver
-    solveQuadratic() {
-        const solutionDiv = document.getElementById('quadratic-solution');
-        let a, b, c;
-
-        // Try to get from full equation first
-        const equationInput = document.getElementById('quad-equation').value.trim();
-
-        if (equationInput) {
-            try {
-                const coeffs = this.parseQuadratic(equationInput);
-                a = coeffs.a;
-                b = coeffs.b;
-                c = coeffs.c;
-            } catch (error) {
-                this.showError(solutionDiv, error.message);
-                return;
-            }
-        } else {
-            // Get from individual inputs
-            a = parseFloat(document.getElementById('quad-a').value) || 0;
-            b = parseFloat(document.getElementById('quad-b').value) || 0;
-            c = parseFloat(document.getElementById('quad-c').value) || 0;
-        }
-
-        if (a === 0) {
-            this.showError(solutionDiv, 'Coefficient a cannot be 0 for a quadratic equation');
-            return;
-        }
-
-        const steps = [];
-        steps.push(`Equation: ${a}x² + ${b}x + ${c} = 0`);
-        steps.push(`Using quadratic formula: x = (-b ± √(b² - 4ac)) / 2a`);
-
-        const discriminant = b * b - 4 * a * c;
-        steps.push(`Calculate discriminant: Δ = b² - 4ac = ${b}² - 4(${a})(${c}) = ${discriminant}`);
-
-        const solutions = [];
-
-        if (discriminant > 0) {
-            steps.push(`Δ > 0: Two distinct real solutions`);
-            const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-            const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-            steps.push(`x₁ = (-${b} + √${discriminant}) / ${2 * a} = ${x1}`);
-            steps.push(`x₂ = (-${b} - √${discriminant}) / ${2 * a} = ${x2}`);
-            solutions.push(x1, x2);
-        } else if (discriminant === 0) {
-            steps.push(`Δ = 0: One repeated real solution`);
-            const x = -b / (2 * a);
-            steps.push(`x = -${b} / ${2 * a} = ${x}`);
-            solutions.push(x);
-        } else {
-            steps.push(`Δ < 0: Two complex solutions`);
-            const realPart = -b / (2 * a);
-            const imagPart = Math.sqrt(-discriminant) / (2 * a);
-            steps.push(`x₁ = ${realPart} + ${imagPart}i`);
-            steps.push(`x₂ = ${realPart} - ${imagPart}i`);
-            solutions.push(`${realPart} + ${imagPart}i`, `${realPart} - ${imagPart}i`);
-        }
-
-        // Vertex calculation
-        const h = -b / (2 * a);
-        const k = a * h * h + b * h + c;
-        steps.push(`Vertex: (${h}, ${k})`);
-
-        this.displaySolution(solutionDiv, solutions, steps, 'x');
+    // Extract a, b, c coefficients directly from a quadratic expression
+    extractQuadraticCoeffs(expression, variable) {
+        // Evaluate at three points to determine a, b, c from ax²+bx+c
+        const f = (v) => math.evaluate(expression, { [variable]: v });
+        const f0 = f(0);  // c
+        const f1 = f(1);  // a + b + c
+        const fm1 = f(-1); // a - b + c
+        const a = (f1 + fm1 - 2 * f0) / 2;
+        const b = (f1 - fm1) / 2;
+        const c = f0;
+        return { a, b, c };
     }
 
     // Simultaneous Equations Solver
@@ -490,10 +445,19 @@ class Calculator {
     }
 
     isLinear(expression, variable) {
-        // Check if expression contains x^2, x^3, etc.
-        const pattern = new RegExp(`${variable}\\s*\\^\\s*[2-9]`, 'i');
-        return !pattern.test(expression) && !expression.includes('sin') &&
-               !expression.includes('cos') && !expression.includes('tan');
+        const quadraticOrHigher = new RegExp(`${variable}\\s*\\^\\s*[2-9]`, 'i');
+        return !quadraticOrHigher.test(expression) &&
+               !expression.includes('sin') && !expression.includes('cos') && !expression.includes('tan');
+    }
+
+    isQuadratic(expression, variable) {
+        // Has x^2 but not x^3 or higher, and no trig/log functions
+        const quadratic = new RegExp(`${variable}\\s*\\^\\s*2`, 'i');
+        const cubic = new RegExp(`${variable}\\s*\\^\\s*[3-9]`, 'i');
+        return quadratic.test(expression) && !cubic.test(expression) &&
+               !expression.includes('sin') && !expression.includes('cos') &&
+               !expression.includes('tan') && !expression.includes('log') &&
+               !expression.includes('sqrt');
     }
 
     solveLinear(leftSide, rightSide, variable) {
@@ -582,50 +546,6 @@ class Calculator {
         return null;
     }
 
-    parseQuadratic(equation) {
-        // Remove spaces and convert to lowercase
-        equation = equation.replace(/\s/g, '').toLowerCase();
-
-        // Split by equals
-        const parts = equation.split('=');
-        if (parts.length !== 2) {
-            throw new Error('Equation must contain = sign');
-        }
-
-        let expression = parts[0];
-        const rightSide = parts[1];
-
-        // Move right side to left
-        if (rightSide !== '0') {
-            expression = `${expression}-(${rightSide})`;
-        }
-
-        // Try to extract coefficients
-        let a = 0, b = 0, c = 0;
-
-        // Find x^2 coefficient
-        const x2Match = expression.match(/([+-]?\d*\.?\d*)\*?x\^2|([+-]?\d*\.?\d*)x\*\*2|([+-]?\d*\.?\d*)x²/);
-        if (x2Match) {
-            const coeff = x2Match[1] || x2Match[2] || x2Match[3];
-            a = coeff === '' || coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
-        }
-
-        // Find x coefficient (but not x^2)
-        const xMatch = expression.match(/([+-]?\d*\.?\d*)\*?x(?!\^|²|\*\*)/);
-        if (xMatch) {
-            const coeff = xMatch[1];
-            b = coeff === '' || coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
-        }
-
-        // Find constant by evaluating at x=0
-        try {
-            c = math.evaluate(expression, { x: 0 });
-        } catch (e) {
-            c = 0;
-        }
-
-        return { a, b, c };
-    }
 
     parseLinearEquation(equation) {
         // Parse equation of form ax + by = c

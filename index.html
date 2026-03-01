@@ -17,7 +17,6 @@
         <div class="mode-selector">
             <button class="mode-btn active" data-mode="basic">Basic</button>
             <button class="mode-btn" data-mode="equation">Equations</button>
-            <button class="mode-btn" data-mode="quadratic">Quadratic</button>
             <button class="mode-btn" data-mode="simultaneous">Simultaneous</button>
             <button class="mode-btn" data-mode="function">f(x)</button>
         </div>
@@ -81,36 +80,11 @@
             <!-- Equation Solver Mode -->
             <div class="calculator-mode" id="equation-mode">
                 <div class="input-section">
-                    <label>Enter equation (e.g., 2x + 5 = 13 or x^2 - 4 = 0):</label>
-                    <input type="text" class="equation-input" id="equation-input" placeholder="2x + 5 = 13">
+                    <label>Enter equation (e.g., 2x + 5 = 13, x^2 + 5x + 6 = 0):</label>
+                    <input type="text" class="equation-input" id="equation-input" placeholder="x^2 + 5x + 6 = 0">
                     <button class="solve-btn" onclick="calculator.solveEquation()">Solve</button>
                 </div>
                 <div class="solution-display" id="equation-solution"></div>
-            </div>
-
-            <!-- Quadratic Solver Mode -->
-            <div class="calculator-mode" id="quadratic-mode">
-                <div class="input-section">
-                    <label>Enter quadratic equation (ax² + bx + c = 0):</label>
-                    <div class="quadratic-inputs">
-                        <div class="input-group">
-                            <label>a:</label>
-                            <input type="text" id="quad-a" placeholder="1">
-                        </div>
-                        <div class="input-group">
-                            <label>b:</label>
-                            <input type="text" id="quad-b" placeholder="5">
-                        </div>
-                        <div class="input-group">
-                            <label>c:</label>
-                            <input type="text" id="quad-c" placeholder="6">
-                        </div>
-                    </div>
-                    <p class="hint">Or enter full equation:</p>
-                    <input type="text" class="equation-input" id="quad-equation" placeholder="x^2 + 5x + 6 = 0">
-                    <button class="solve-btn" onclick="calculator.solveQuadratic()">Solve Quadratic</button>
-                </div>
-                <div class="solution-display" id="quadratic-solution"></div>
             </div>
 
             <!-- Simultaneous Equations Mode -->
