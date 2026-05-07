@@ -193,12 +193,14 @@
                                 <button class="btn k-fn" onclick="calculator.pressFunction('sqrt')">
                                     <span class="fn-n">√x</span><span class="fn-s">x²</span>
                                 </button>
-                                <button class="btn k-fn" onclick="calculator.appendToDisplay('^')">xⁿ</button>
+                                <button class="btn k-fn" onclick="calculator.insertPower()">xⁿ</button>
                                 <button class="btn k-fn" onclick="calculator.pressFunction('ln')">
                                     <span class="fn-n">ln</span><span class="fn-s">eˣ</span>
                                 </button>
-                                <button class="btn k-fn" onclick="calculator.appendToDisplay('abs(')">|x|</button>
-                                <button class="btn k-fn" onclick="calculator.appendToDisplay('!')">n!</button>
+                                <button class="btn k-fn k-frac-btn" onclick="calculator.insertFraction()" title="Fraction">
+                                    <span class="k-frac-icon"><span class="k-frac-top">a</span><span class="k-frac-bot">b</span></span>
+                                </button>
+                                <button class="btn k-fn" onclick="calculator.insertAbs()">|x|</button>
 
                                 <!-- Row 3: Clear, backspace, brackets, ANS -->
                                 <button class="btn k-ctrl" onclick="calculator.clear()">C</button>
