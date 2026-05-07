@@ -831,3 +831,257 @@ input  { font-family: inherit; }
     .stat-sep   { display: none; }
     .quadratic-inputs { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   DRFROST DISPLAY AREA
+   ============================================================ */
+.calc-display-area {
+    background: #080810;
+    border: 1px solid #1e1e24;
+    border-radius: var(--r);
+    padding: 12px 16px 10px;
+    margin-bottom: 10px;
+    min-height: 108px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    position: relative; overflow: hidden;
+}
+[data-theme="light"] .calc-display-area {
+    background: #ecebf5;
+    border-color: #c9c8d8;
+}
+
+/* Faint scan-line texture on the display (dark only) */
+[data-theme="dark"] .calc-display-area::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+        transparent, transparent 3px,
+        rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+    );
+    pointer-events: none;
+}
+
+.display-prev {
+    font-size: 0.78em; color: var(--text-3);
+    text-align: right; font-family: 'Courier New', monospace;
+    min-height: 18px; margin-bottom: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Main expression display — was <input>, now <div> */
+.display {
+    width: 100%; min-height: 44px;
+    padding: clamp(4px,1vw,8px) 0;
+    font-size: clamp(1.5rem,4.5vw,2.1rem);
+    text-align: right; background: transparent;
+    color: var(--text); font-family: 'Courier New', monospace;
+    font-weight: 600; word-break: break-all; line-height: 1.2;
+    position: relative; outline: none;
+}
+
+/* Blinking cursor shown while entering an expression */
+.display:not(.result-mode)::after {
+    content: '';
+    display: inline-block;
+    width: 2px; height: 0.9em;
+    background: var(--accent);
+    margin-left: 3px;
+    vertical-align: middle;
+    animation: cur-blink 1s step-end infinite;
+}
+@keyframes cur-blink { 0%,100%{ opacity:1; } 50%{ opacity:0; } }
+
+/* When showing a result, style differently */
+.display.result-mode { color: var(--accent); }
+
+.display-ans {
+    font-size: 0.7em; color: var(--accent-2);
+    font-family: 'Courier New', monospace;
+    min-height: 16px; margin-top: 5px;
+    opacity: 0.75; text-align: left;
+}
+
+/* ============================================================
+   DRFROST KEYBOARD GRID
+   ============================================================ */
+.keyboard-wrap {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(5px,1.5vw,7px);
+}
+
+/* All keyboard buttons share this base (overrides old .btn) */
+.keyboard-wrap .btn {
+    min-height: 50px;
+    padding: clamp(8px,2vw,13px) 4px;
+    font-size: clamp(0.8rem,1.8vw,0.95rem);
+    border-radius: var(--r-sm); font-weight: 600;
+    font-family: inherit;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+    -webkit-tap-highlight-color: transparent;
+    transition: background var(--tr), transform var(--tr), box-shadow var(--tr);
+    user-select: none;
+}
+.keyboard-wrap .btn:hover  { transform: translateY(-1px); }
+.keyboard-wrap .btn:active { transform: scale(0.95); }
+
+/* 2nd / Shift button */
+.k-shift {
+    background: var(--bg-elevated); color: var(--text-2);
+    border: 1px solid var(--border);
+    font-size: 0.68em !important; font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.k-shift.active {
+    background: var(--accent); color: #fff;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px rgba(129,140,248,0.35);
+}
+[data-theme="dark"] .k-shift { background: #1a1a1f; border-color: #2e2e34; }
+[data-theme="dark"] .k-shift:hover { background: #27272a; }
+
+/* Function keys (sin, cos, sqrt, etc.) */
+.k-fn {
+    background: var(--bg-input); color: var(--text-2);
+    border: 1px solid var(--border);
+    font-size: clamp(0.68rem,1.4vw,0.8rem) !important;
+}
+.k-fn:hover { background: var(--accent-light); color: var(--accent); border-color: rgba(99,102,241,0.3); }
+[data-theme="dark"] .k-fn { background: #16161a; border-color: #26262c; }
+[data-theme="dark"] .k-fn:hover { background: rgba(129,140,248,0.11); }
+
+/* Primary / shifted label spans inside fn buttons */
+.fn-n { display: block; }
+.fn-s { display: none; font-size: 0.88em; color: var(--accent-2); }
+.keyboard-wrap.shifted .fn-n { display: none; }
+.keyboard-wrap.shifted .fn-s { display: block; }
+.keyboard-wrap.shifted .k-fn {
+    border-color: rgba(167,139,250,0.3);
+    color: var(--accent-2);
+}
+
+/* Control keys: C, ⌫, brackets */
+.k-ctrl {
+    background: var(--bg-input); color: var(--text-2);
+    border: 1px solid var(--border);
+}
+.k-ctrl:hover { background: var(--bg-elevated); color: var(--text); }
+[data-theme="dark"] .k-ctrl { background: #27272a; border-color: #3a3a42; }
+[data-theme="dark"] .k-ctrl:hover { background: #3a3a42; color: #fafafa; }
+
+/* ANS button — prominent violet */
+.k-ans {
+    background: rgba(167,139,250,0.14); color: var(--accent-2);
+    border: 1px solid rgba(167,139,250,0.32);
+    font-weight: 800; letter-spacing: 0.02em;
+}
+.k-ans:hover { background: var(--accent-2); color: #fff; border-color: transparent; box-shadow: 0 2px 12px rgba(167,139,250,0.38); }
+
+/* Number keys */
+.k-num {
+    background: var(--bg-card); color: var(--text);
+    border: 1px solid var(--border);
+    font-size: clamp(0.95rem,2vw,1.05rem) !important;
+}
+.k-num:hover { background: var(--bg-input); }
+[data-theme="dark"] .k-num { background: #1c1c1f; border-color: #2e2e32; }
+[data-theme="dark"] .k-num:hover { background: #27272a; }
+
+/* 0 spans 2 grid columns */
+.k-wide { grid-column: span 2; }
+
+/* Operator keys */
+.k-op {
+    background: rgba(99,102,241,0.1); color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.22);
+    font-size: clamp(0.95rem,2vw,1.1rem) !important;
+}
+.k-op:hover { background: var(--accent); color: #fff; border-color: transparent; }
+
+/* Equals — full accent, no border override needed */
+.k-eq {
+    background: var(--accent); color: #fff;
+    font-size: clamp(1.05rem,2.5vw,1.25rem) !important;
+    box-shadow: 0 2px 12px rgba(99,102,241,0.32);
+    border: none;
+}
+.k-eq:hover { background: var(--accent-h); box-shadow: 0 4px 20px rgba(99,102,241,0.48); }
+
+/* ============================================================
+   MATH KEYBOARD — inside solver panels
+   ============================================================ */
+.math-keyboard {
+    margin-top: 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 11px 12px 12px;
+}
+[data-theme="dark"] .math-keyboard { background: #0c0c10; border-color: #22222a; }
+
+.mk-label {
+    font-size: 0.64em; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 700; margin-bottom: 8px;
+}
+
+.mk-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+}
+
+.mk-btn {
+    padding: 7px 3px; min-height: 36px;
+    border: 1px solid var(--border); background: var(--bg-card);
+    border-radius: 6px; font-size: 0.76em; font-weight: 600;
+    color: var(--text-2); cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--tr), color var(--tr), border-color var(--tr);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.mk-btn:hover  { background: var(--bg-input); color: var(--text); }
+.mk-btn:active { transform: scale(0.94); }
+[data-theme="dark"] .mk-btn { background: #18181b; border-color: #27272a; color: #71717a; }
+[data-theme="dark"] .mk-btn:hover { background: #222226; color: #e4e4e7; }
+
+/* Variable keys (x, y) */
+.mk-var {
+    color: var(--accent); border-color: rgba(99,102,241,0.28);
+    background: var(--accent-light); font-weight: 800;
+}
+.mk-var:hover { background: var(--accent); color: #fff; border-color: transparent; }
+
+/* Number keys */
+.mk-num { color: var(--text); }
+[data-theme="dark"] .mk-num { background: #1c1c1f; border-color: #2e2e32; color: #e4e4e7; }
+.mk-num:hover { background: var(--bg-elevated); }
+
+/* Operator keys */
+.mk-op {
+    color: var(--accent); background: var(--accent-light);
+    border-color: rgba(99,102,241,0.2);
+}
+.mk-op:hover { background: var(--accent); color: #fff; border-color: transparent; }
+
+/* Equals key */
+.mk-eq { font-weight: 800; color: var(--text); }
+
+/* Control keys */
+.mk-ctrl { color: var(--text-2); }
+.mk-ctrl:hover { background: rgba(239,68,68,0.1); color: var(--danger); border-color: rgba(239,68,68,0.25); }
+
+/* ANS key */
+.mk-ans {
+    color: var(--accent-2); border-color: rgba(167,139,250,0.3);
+    background: rgba(167,139,250,0.1); font-weight: 800;
+}
+.mk-ans:hover { background: var(--accent-2); color: #fff; border-color: transparent; }
+
+/* Highlight on focused solver input */
+.solver-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-light);
+}

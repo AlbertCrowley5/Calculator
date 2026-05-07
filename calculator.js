@@ -1,14 +1,19 @@
 class Calculator {
     constructor() {
-        this.currentInput = '';
-        this.expressionHistory = '';
-        this.calcHistory = [];
-        this.memoryValue = 0;
-        this.angleMode = 'deg';
+        this.currentInput  = '';
+        this.lastAnswer    = null;
+        this.shiftActive   = false;
+        this.resultShown   = false;
+        this.activeInput   = null;
+        this.calcHistory   = [];
+        this.memoryValue   = 0;
+        this.angleMode     = 'deg';
         this.initializeModeSwitching();
         this.initializeTheme();
+        this.setupSolverInputTracking();
     }
 
+    // ── Theme ────────────────────────────────────────────────
     initializeTheme() {
         const toggle = document.getElementById('theme-toggle');
         if (toggle) {
@@ -21,6 +26,7 @@ class Calculator {
         }
     }
 
+    // ── Mode switching ───────────────────────────────────────
     initializeModeSwitching() {
         document.querySelectorAll('.mode-item').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -38,16 +44,27 @@ class Calculator {
         if (modeEl) modeEl.classList.add('active');
 
         const names = {
-            basic: 'Standard Calculator',
-            equation: 'Equation Solver',
-            quadratic: 'Quadratic Solver',
+            basic:        'Standard Calculator',
+            equation:     'Equation Solver',
+            quadratic:    'Quadratic Solver',
             simultaneous: 'Simultaneous Equations',
-            function: 'Function Evaluator'
+            function:     'Function Evaluator'
         };
         const indicator = document.getElementById('mode-indicator');
         if (indicator) indicator.textContent = names[mode] || mode;
 
         this.clearSolutions();
+
+        // Auto-focus first solver input when switching to a solver mode
+        if (mode !== 'basic') {
+            setTimeout(() => {
+                const firstInput = modeEl?.querySelector('.solver-input');
+                if (firstInput) {
+                    firstInput.focus();
+                    this.activeInput = firstInput;
+                }
+            }, 60);
+        }
     }
 
     clearSolutions() {
@@ -57,27 +74,104 @@ class Calculator {
         });
     }
 
+    // ── Solver input tracking (for math keyboard) ────────────
+    setupSolverInputTracking() {
+        document.querySelectorAll('.solver-input').forEach(input => {
+            input.addEventListener('focus', () => {
+                this.activeInput = input;
+            });
+        });
+    }
+
+    // ── Display helpers ──────────────────────────────────────
+    updateDisplay() {
+        const el = document.getElementById('display');
+        if (!el) return;
+        el.textContent = this.currentInput || '0';
+        el.classList.toggle('result-mode', this.resultShown);
+    }
+
+    // ── Main keyboard: append to expression ─────────────────
     appendToDisplay(value) {
+        if (this.resultShown) {
+            // Digits/functions start fresh; operators chain onto the result
+            const isChainOp = /^[+\-*/^]/.test(value) || value === 'mod ';
+            if (!isChainOp) this.currentInput = '';
+            this.resultShown = false;
+        }
         this.currentInput += value;
-        document.getElementById('display').value = this.currentInput;
+        this.updateDisplay();
     }
 
     clear() {
         this.currentInput = '';
-        this.expressionHistory = '';
-        document.getElementById('display').value = '';
-        document.getElementById('history').textContent = '';
+        this.resultShown  = false;
+        document.getElementById('display')?.classList.remove('result-mode');
+        this.updateDisplay();
+        document.getElementById('display-prev') && (document.getElementById('display-prev').textContent = '');
     }
 
     backspace() {
+        if (this.resultShown) { this.clear(); return; }
         this.currentInput = this.currentInput.slice(0, -1);
-        document.getElementById('display').value = this.currentInput;
+        this.updateDisplay();
     }
 
+    // ── ANS ──────────────────────────────────────────────────
+    appendAns() {
+        if (this.lastAnswer === null || this.lastAnswer === undefined) return;
+        const ansStr = String(this.lastAnswer);
+        if (this.resultShown) {
+            this.currentInput = ansStr;
+            this.resultShown  = false;
+        } else {
+            this.currentInput += ansStr;
+        }
+        this.updateDisplay();
+    }
+
+    // ── 2nd / Shift ──────────────────────────────────────────
+    toggleShift() {
+        this.shiftActive = !this.shiftActive;
+        document.getElementById('shift-btn')?.classList.toggle('active', this.shiftActive);
+        document.getElementById('keyboard-wrap')?.classList.toggle('shifted', this.shiftActive);
+    }
+
+    pressFunction(fn) {
+        const s = this.shiftActive;
+        const map = {
+            sin:  s ? 'asin('  : 'sin(',
+            cos:  s ? 'acos('  : 'cos(',
+            tan:  s ? 'atan('  : 'tan(',
+            log:  s ? '10^('   : 'log10(',
+            ln:   s ? 'e^('    : 'log(',
+            sqrt: s ? '^2'     : 'sqrt(',
+        };
+        const value = map[fn];
+        if (!value) return;
+        if (this.shiftActive) this.toggleShift();
+        this.appendToDisplay(value);
+    }
+
+    toggleSign() {
+        if (!this.currentInput) return;
+        if (this.resultShown) {
+            this.currentInput = this.currentInput.startsWith('-')
+                ? this.currentInput.slice(1)
+                : '-' + this.currentInput;
+            this.updateDisplay();
+            return;
+        }
+        this.currentInput = this.currentInput.startsWith('-')
+            ? this.currentInput.slice(1)
+            : '-' + this.currentInput;
+        this.updateDisplay();
+    }
+
+    // ── Calculate ────────────────────────────────────────────
     calculate() {
         try {
             if (!this.currentInput) return;
-
             const expression = this.currentInput;
             let result;
 
@@ -95,14 +189,22 @@ class Calculator {
                 result = math.evaluate(expression);
             }
 
-            document.getElementById('history').textContent = expression + ' =';
-            document.getElementById('display').value = result;
-            this.currentInput = result.toString();
+            const prevEl = document.getElementById('display-prev');
+            if (prevEl) prevEl.textContent = expression + ' =';
+
+            this.currentInput = String(result);
+            this.lastAnswer   = result;
+            this.resultShown  = true;
+            this.updateDisplay();
+
+            const ansEl = document.getElementById('display-ans');
+            if (ansEl) ansEl.textContent = `Ans = ${result}`;
 
             this.addToCalcHistory(expression, result);
 
-        } catch (error) {
-            document.getElementById('display').value = 'Error';
+        } catch {
+            const el = document.getElementById('display');
+            if (el) { el.textContent = 'Error'; el.classList.add('result-mode'); }
             setTimeout(() => this.clear(), 1500);
         }
     }
@@ -114,17 +216,17 @@ class Calculator {
     }
 
     memoryRecall() {
-        this.appendToDisplay(this.memoryValue.toString());
+        this.appendToDisplay(String(this.memoryValue));
     }
 
     memoryAdd() {
-        const current = parseFloat(document.getElementById('display').value) || 0;
+        const current = parseFloat(document.getElementById('display')?.textContent) || 0;
         this.memoryValue += current;
         this.updateMemoryDisplay();
     }
 
     memorySubtract() {
-        const current = parseFloat(document.getElementById('display').value) || 0;
+        const current = parseFloat(document.getElementById('display')?.textContent) || 0;
         this.memoryValue -= current;
         this.updateMemoryDisplay();
     }
@@ -147,8 +249,8 @@ class Calculator {
 
     // ── Clipboard ────────────────────────────────────────────
     copyResult() {
-        const value = document.getElementById('display').value;
-        if (!value || value === 'Error') return;
+        const value = document.getElementById('display')?.textContent;
+        if (!value || value === 'Error' || value === '0') return;
         navigator.clipboard.writeText(value).then(() => {
             const btn = document.getElementById('copy-btn');
             if (btn) {
@@ -203,20 +305,61 @@ class Calculator {
     loadFromHistory(index) {
         const item = this.calcHistory[index];
         if (!item) return;
-        this.currentInput = item.result.toString();
-        document.getElementById('display').value = item.result;
-        document.getElementById('history').textContent = item.expression + ' =';
+        this.currentInput = String(item.result);
+        this.resultShown  = false;
+        this.updateDisplay();
+        const prevEl = document.getElementById('display-prev');
+        if (prevEl) prevEl.textContent = item.expression + ' =';
+    }
+
+    // ── Solver math keyboard helpers ─────────────────────────
+    appendToInput(value) {
+        const input = this.activeInput;
+        if (!input) return;
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + value + input.value.slice(end);
+        const newPos = start + value.length;
+        input.focus();
+        input.setSelectionRange(newPos, newPos);
+    }
+
+    appendAnsToInput() {
+        if (this.lastAnswer === null || this.lastAnswer === undefined) return;
+        this.appendToInput(String(this.lastAnswer));
+    }
+
+    backspaceInput() {
+        const input = this.activeInput;
+        if (!input) return;
+        const start = input.selectionStart;
+        const end   = input.selectionEnd;
+        if (start !== end) {
+            input.value = input.value.slice(0, start) + input.value.slice(end);
+            input.focus();
+            input.setSelectionRange(start, start);
+        } else if (start > 0) {
+            input.value = input.value.slice(0, start - 1) + input.value.slice(start);
+            input.focus();
+            input.setSelectionRange(start - 1, start - 1);
+        } else {
+            input.focus();
+        }
+    }
+
+    clearInput() {
+        const input = this.activeInput;
+        if (!input) return;
+        input.value = '';
+        input.focus();
     }
 
     // ── Equation Solver ──────────────────────────────────────
     solveEquation() {
         const equationInput = document.getElementById('equation-input').value.trim();
-        const solutionDiv = document.getElementById('equation-solution');
+        const solutionDiv   = document.getElementById('equation-solution');
 
-        if (!equationInput) {
-            this.showError(solutionDiv, 'Please enter an equation');
-            return;
-        }
+        if (!equationInput) { this.showError(solutionDiv, 'Please enter an equation'); return; }
 
         try {
             let equation = equationInput.replace(/\s/g, '');
@@ -237,32 +380,24 @@ class Calculator {
             steps.push(`Original equation: ${leftSide} = ${rightSide}`);
             steps.push(`Rearranged: ${expression} = 0`);
 
-            try {
-                const symbolicSolution = math.simplify(expression);
-                steps.push(`Simplified: ${symbolicSolution.toString()} = 0`);
+            const symbolicSolution = math.simplify(expression);
+            steps.push(`Simplified: ${symbolicSolution.toString()} = 0`);
 
-                if (this.isLinear(expression, variable)) {
-                    const solution = this.solveLinear(leftSide, rightSide, variable);
-                    solutions.push(solution);
-                    steps.push(`Solving for ${variable}: ${variable} = ${solution}`);
-                } else {
-                    const startPoints = [-10, -1, 0, 1, 10];
-                    const foundSolutions = new Set();
-
-                    for (let start of startPoints) {
-                        try {
-                            const sol = this.newtonRaphson(expression, variable, start);
-                            if (sol !== null && !isNaN(sol)) {
-                                foundSolutions.add(Math.round(sol * 1e10) / 1e10);
-                            }
-                        } catch (e) {}
-                    }
-
-                    solutions = Array.from(foundSolutions);
-                    if (solutions.length > 0) steps.push(`Found solution(s) using numerical methods:`);
+            if (this.isLinear(expression, variable)) {
+                const solution = this.solveLinear(leftSide, rightSide, variable);
+                solutions.push(solution);
+                steps.push(`Solving for ${variable}: ${variable} = ${solution}`);
+            } else {
+                const startPoints = [-10, -1, 0, 1, 10];
+                const foundSolutions = new Set();
+                for (let start of startPoints) {
+                    try {
+                        const sol = this.newtonRaphson(expression, variable, start);
+                        if (sol !== null && !isNaN(sol)) foundSolutions.add(Math.round(sol * 1e10) / 1e10);
+                    } catch {}
                 }
-            } catch (e) {
-                throw new Error('Could not solve equation: ' + e.message);
+                solutions = Array.from(foundSolutions);
+                if (solutions.length > 0) steps.push('Found solution(s) using numerical methods:');
             }
 
             if (solutions.length === 0) throw new Error('No solutions found');
@@ -279,49 +414,42 @@ class Calculator {
         let a, b, c;
 
         const equationInput = document.getElementById('quad-equation').value.trim();
-
         if (equationInput) {
             try {
                 const coeffs = this.parseQuadratic(equationInput);
                 a = coeffs.a; b = coeffs.b; c = coeffs.c;
-            } catch (error) {
-                this.showError(solutionDiv, error.message);
-                return;
-            }
+            } catch (error) { this.showError(solutionDiv, error.message); return; }
         } else {
             a = parseFloat(document.getElementById('quad-a').value) || 0;
             b = parseFloat(document.getElementById('quad-b').value) || 0;
             c = parseFloat(document.getElementById('quad-c').value) || 0;
         }
 
-        if (a === 0) {
-            this.showError(solutionDiv, 'Coefficient a cannot be 0 for a quadratic equation');
-            return;
-        }
+        if (a === 0) { this.showError(solutionDiv, 'Coefficient a cannot be 0 for a quadratic equation'); return; }
 
         const steps = [];
         steps.push(`Equation: ${a}x² + ${b}x + ${c} = 0`);
         steps.push(`Using quadratic formula: x = (-b ± √(b² - 4ac)) / 2a`);
 
         const discriminant = b * b - 4 * a * c;
-        steps.push(`Calculate discriminant: Δ = b² - 4ac = ${b}² - 4(${a})(${c}) = ${discriminant}`);
+        steps.push(`Discriminant: Δ = ${b}² - 4(${a})(${c}) = ${discriminant}`);
 
         const solutions = [];
 
         if (discriminant > 0) {
-            steps.push(`Δ > 0: Two distinct real solutions`);
+            steps.push('Δ > 0: Two distinct real solutions');
             const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
             const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
             steps.push(`x₁ = (-${b} + √${discriminant}) / ${2 * a} = ${x1}`);
             steps.push(`x₂ = (-${b} - √${discriminant}) / ${2 * a} = ${x2}`);
             solutions.push(x1, x2);
         } else if (discriminant === 0) {
-            steps.push(`Δ = 0: One repeated real solution`);
+            steps.push('Δ = 0: One repeated real solution');
             const x = -b / (2 * a);
             steps.push(`x = -${b} / ${2 * a} = ${x}`);
             solutions.push(x);
         } else {
-            steps.push(`Δ < 0: Two complex solutions`);
+            steps.push('Δ < 0: Two complex solutions');
             const realPart = -b / (2 * a);
             const imagPart = Math.sqrt(-discriminant) / (2 * a);
             steps.push(`x₁ = ${realPart} + ${imagPart}i`);
@@ -342,10 +470,7 @@ class Calculator {
         const eq2 = document.getElementById('sim-eq2').value.trim();
         const solutionDiv = document.getElementById('simultaneous-solution');
 
-        if (!eq1 || !eq2) {
-            this.showError(solutionDiv, 'Please enter both equations');
-            return;
-        }
+        if (!eq1 || !eq2) { this.showError(solutionDiv, 'Please enter both equations'); return; }
 
         try {
             const steps = [];
@@ -355,7 +480,7 @@ class Calculator {
             const parsed1 = this.parseLinearEquation(eq1);
             const parsed2 = this.parseLinearEquation(eq2);
 
-            steps.push(`Standard form:`);
+            steps.push('Standard form:');
             steps.push(`${parsed1.xCoeff}x + ${parsed1.yCoeff}y = ${parsed1.constant}`);
             steps.push(`${parsed2.xCoeff}x + ${parsed2.yCoeff}y = ${parsed2.constant}`);
 
@@ -365,7 +490,7 @@ class Calculator {
             const determinant = a1 * b2 - a2 * b1;
             if (determinant === 0) throw new Error('System has no unique solution (lines are parallel or coincident)');
 
-            steps.push(`Using Cramer's Rule:`);
+            steps.push("Using Cramer's Rule:");
             steps.push(`D = (${a1})(${b2}) - (${a2})(${b1}) = ${determinant}`);
 
             const x = (c1 * b2 - c2 * b1) / determinant;
@@ -378,7 +503,7 @@ class Calculator {
 
             const check1 = Math.abs(a1 * x + b1 * y - c1) < 0.0001;
             const check2 = Math.abs(a2 * x + b2 * y - c2) < 0.0001;
-            if (check1 && check2) steps.push(`Verification: Solution satisfies both equations ✓`);
+            if (check1 && check2) steps.push('Verification: Solution satisfies both equations ✓');
 
             this.displaySolution(solutionDiv, [`x = ${x}`, `y = ${y}`], steps);
 
@@ -393,10 +518,7 @@ class Calculator {
         const xValue     = document.getElementById('function-x').value.trim();
         const solutionDiv = document.getElementById('function-solution');
 
-        if (!funcDef || !xValue) {
-            this.showError(solutionDiv, 'Please enter both function and x value');
-            return;
-        }
+        if (!funcDef || !xValue) { this.showError(solutionDiv, 'Please enter both function and x value'); return; }
 
         try {
             const x = parseFloat(xValue);
@@ -412,9 +534,7 @@ class Calculator {
 
             this.displaySolution(solutionDiv, [result], steps);
 
-        } catch (error) {
-            this.showError(solutionDiv, error.message);
-        }
+        } catch (error) { this.showError(solutionDiv, error.message); }
     }
 
     solveFunctionEquation() {
@@ -422,10 +542,7 @@ class Calculator {
         const targetValue = document.getElementById('function-value').value.trim();
         const solutionDiv = document.getElementById('function-solution');
 
-        if (!funcDef || targetValue === '') {
-            this.showError(solutionDiv, 'Please enter both function and target value');
-            return;
-        }
+        if (!funcDef || targetValue === '') { this.showError(solutionDiv, 'Please enter both function and target value'); return; }
 
         try {
             const target = parseFloat(targetValue);
@@ -441,9 +558,7 @@ class Calculator {
 
             for (let start of startPoints) {
                 const sol = this.newtonRaphson(expression, 'x', start);
-                if (sol !== null && !isNaN(sol)) {
-                    foundSolutions.add(Math.round(sol * 1e10) / 1e10);
-                }
+                if (sol !== null && !isNaN(sol)) foundSolutions.add(Math.round(sol * 1e10) / 1e10);
             }
 
             const solutions = Array.from(foundSolutions);
@@ -458,12 +573,10 @@ class Calculator {
 
             this.displaySolution(solutionDiv, solutions, steps, 'x');
 
-        } catch (error) {
-            this.showError(solutionDiv, error.message);
-        }
+        } catch (error) { this.showError(solutionDiv, error.message); }
     }
 
-    // ── Helpers ──────────────────────────────────────────────
+    // ── Math helpers ─────────────────────────────────────────
     findVariables(expression) {
         const vars = new Set();
         const matches = expression.match(/[a-z]/gi);
@@ -483,17 +596,13 @@ class Calculator {
         leftSide  = leftSide.replace(/\s/g, '');
         rightSide = rightSide.replace(/\s/g, '');
         const expr = `${leftSide} - (${rightSide})`;
-
         try {
             const val1 = math.evaluate(expr, { [variable]: 1 });
             const val0 = math.evaluate(expr, { [variable]: 0 });
-            const coeff    = val1 - val0;
-            const constant = val0;
+            const coeff = val1 - val0;
             if (coeff === 0) throw new Error('Not a valid linear equation');
-            return -constant / coeff;
-        } catch (e) {
-            throw new Error('Could not solve linear equation');
-        }
+            return -val0 / coeff;
+        } catch { throw new Error('Could not solve linear equation'); }
     }
 
     newtonRaphson(expression, variable, initialGuess, maxIterations = 50) {
@@ -503,33 +612,25 @@ class Calculator {
         for (let i = 0; i < maxIterations; i++) {
             try {
                 const scope = { [variable]: x };
-                const fx = math.evaluate(expression, scope);
-
-                const h = 0.0001;
+                const fx  = math.evaluate(expression, scope);
+                const h   = 0.0001;
                 scope[variable] = x + h;
                 const fxh = math.evaluate(expression, scope);
                 const derivative = (fxh - fx) / h;
 
                 if (Math.abs(derivative) < tolerance) break;
-
                 const xNew = x - fx / derivative;
                 if (Math.abs(xNew - x) < tolerance) return xNew;
                 x = xNew;
 
                 scope[variable] = x;
-                const check = math.evaluate(expression, scope);
-                if (Math.abs(check) < tolerance) return x;
-
-            } catch (e) {
-                return null;
-            }
+                if (Math.abs(math.evaluate(expression, scope)) < tolerance) return x;
+            } catch { return null; }
         }
 
         try {
-            const scope = { [variable]: x };
-            const check = math.evaluate(expression, scope);
-            if (Math.abs(check) < 0.01) return x;
-        } catch (e) {}
+            if (Math.abs(math.evaluate(expression, { [variable]: x })) < 0.01) return x;
+        } catch {}
 
         return null;
     }
@@ -544,7 +645,6 @@ class Calculator {
         if (rightSide !== '0') expression = `${expression}-(${rightSide})`;
 
         let a = 0, b = 0, c = 0;
-
         const x2Match = expression.match(/([+-]?\d*\.?\d*)\*?x\^2|([+-]?\d*\.?\d*)x\*\*2|([+-]?\d*\.?\d*)x²/);
         if (x2Match) {
             const coeff = x2Match[1] || x2Match[2] || x2Match[3];
@@ -557,7 +657,7 @@ class Calculator {
             b = coeff === '' || coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
         }
 
-        try { c = math.evaluate(expression, { x: 0 }); } catch (e) { c = 0; }
+        try { c = math.evaluate(expression, { x: 0 }); } catch { c = 0; }
 
         return { a, b, c };
     }
@@ -620,7 +720,8 @@ const calculator = new Calculator();
 
 document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
-        if (document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'display') return;
+        // If a solver input has focus, let it handle typing normally
+        if (document.activeElement.classList.contains('solver-input')) return;
 
         if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
             calculator.appendToDisplay(e.key);
@@ -633,10 +734,13 @@ document.addEventListener('DOMContentLoaded', () => {
             calculator.clear();
         } else if (e.key === 'Backspace') {
             calculator.backspace();
+        } else if (e.key.toLowerCase() === 'a') {
+            calculator.appendAns();
         }
     });
 
-    document.querySelectorAll('.equation-input').forEach(input => {
+    // Enter key in solver inputs triggers the solve action
+    document.querySelectorAll('.solver-input').forEach(input => {
         input.addEventListener('keydown', (e) => {
             if (e.key !== 'Enter') return;
             e.preventDefault();
@@ -644,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mode === 'equation-mode')     calculator.solveEquation();
             else if (mode === 'quadratic-mode')    calculator.solveQuadratic();
             else if (mode === 'simultaneous-mode') calculator.solveSimultaneous();
+            else if (mode === 'function-mode')     calculator.evaluateFunction();
         });
     });
 });
