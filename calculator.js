@@ -1,7 +1,6 @@
 class Calculator {
     constructor() {
         this.currentInput  = '';
-        this.cursorPos     = 0;
         this.lastAnswer    = null;
         this.shiftActive   = false;
         this.resultShown   = false;
@@ -58,6 +57,8 @@ class Calculator {
                 const firstInput = modeEl?.querySelector('.solver-input');
                 if (firstInput) { firstInput.focus(); this.activeInput = firstInput; }
             }, 60);
+        } else {
+            setTimeout(() => document.getElementById('display')?.focus(), 60);
         }
     }
 
@@ -74,233 +75,99 @@ class Calculator {
         });
     }
 
-    // ── Visual renderer ──────────────────────────────────────
-    renderDisplay() {
-        const el = document.getElementById('display');
-        if (!el) return;
+    // ── Display helpers ──────────────────────────────────────
+    getDisplayInput() { return document.getElementById('display'); }
 
-        if (this.resultShown) {
-            el.textContent = this.currentInput || '0';
-            el.classList.add('result-mode');
-            return;
-        }
-        el.classList.remove('result-mode');
-        el.innerHTML = this.currentInput
-            ? this.renderToHtml(this.currentInput, this.cursorPos)
-            : '<span class="disp-cursor"></span>';
+    // Transform display chars (×÷π) back to math.js-compatible form
+    getExpressionForEval(str) {
+        return str.replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'pi');
     }
 
-    renderToHtml(str, cur) {
-        let html = '';
-        let i = 0;
-
-        while (i <= str.length) {
-            if (cur === i) html += '<span class="disp-cursor"></span>';
-            if (i === str.length) break;
-
-            const rest = str.slice(i);
-            const ch = str[i];
-
-            // ── frac(NUM,DEN) ──────────────────────────────
-            if (rest.startsWith('frac(')) {
-                const openIdx = i + 4;
-                const closeIdx = this.findMatchingParen(str, openIdx);
-                if (closeIdx === -1) {
-                    html += '<span class="disp-fn">frac</span>(';
-                    i += 5; continue;
-                }
-                const inner = str.slice(openIdx + 1, closeIdx);
-                const commaIdx = this.findTopLevelComma(inner);
-                const numStr = commaIdx === -1 ? inner : inner.slice(0, commaIdx);
-                const denStr = commaIdx === -1 ? '' : inner.slice(commaIdx + 1);
-                const numStart = openIdx + 1;
-                const denStart = numStart + numStr.length + 1;
-                const numCur = (cur >= numStart && cur <= numStart + numStr.length) ? cur - numStart : -1;
-                const denCur = (cur >= denStart && cur <= denStart + denStr.length) ? cur - denStart : -1;
-                const numHtml = numStr
-                    ? this.renderToHtml(numStr, numCur)
-                    : (numCur === 0 ? '<span class="disp-cursor"></span>' : '<span class="disp-slot">■</span>');
-                const denHtml = denStr
-                    ? this.renderToHtml(denStr, denCur)
-                    : (denCur === 0 ? '<span class="disp-cursor"></span>' : '<span class="disp-slot">■</span>');
-                html += `<span class="disp-frac"><span class="disp-num">${numHtml}</span><span class="disp-den">${denHtml}</span></span>`;
-                i = closeIdx + 1; continue;
-            }
-
-            // ── sqrt(CONTENT) ──────────────────────────────
-            if (rest.startsWith('sqrt(')) {
-                const openIdx = i + 4;
-                const closeIdx = this.findMatchingParen(str, openIdx);
-                const innerStart = openIdx + 1;
-                let inner, endIdx;
-                if (closeIdx === -1) {
-                    inner = str.slice(innerStart); endIdx = str.length;
-                } else {
-                    inner = str.slice(innerStart, closeIdx); endIdx = closeIdx + 1;
-                }
-                const innerCur = (cur >= innerStart && cur <= innerStart + inner.length) ? cur - innerStart : -1;
-                const innerHtml = inner
-                    ? this.renderToHtml(inner, innerCur)
-                    : (innerCur === 0 ? '<span class="disp-cursor"></span>' : '<span class="disp-slot">■</span>');
-                html += `<span class="disp-sqrt"><span class="disp-sqrt-sign">√</span><span class="disp-sqrt-body">${innerHtml}</span></span>`;
-                i = endIdx; continue;
-            }
-
-            // ── abs(CONTENT) ───────────────────────────────
-            if (rest.startsWith('abs(')) {
-                const openIdx = i + 3;
-                const closeIdx = this.findMatchingParen(str, openIdx);
-                if (closeIdx === -1) { html += '<span class="disp-fn">|</span>'; i += 4; continue; }
-                const inner = str.slice(openIdx + 1, closeIdx);
-                const innerStart = openIdx + 1;
-                const innerCur = (cur >= innerStart && cur <= innerStart + inner.length) ? cur - innerStart : -1;
-                const innerHtml = inner ? this.renderToHtml(inner, innerCur) : '';
-                html += `<span class="disp-abs">|<span class="disp-abs-body">${innerHtml}</span>|</span>`;
-                i = closeIdx + 1; continue;
-            }
-
-            // ── Named functions (longest match first) ──────
-            const fnRx = /^(asin|acos|atan|log10|log|sin|cos|tan)\(/;
-            const fnMatch = rest.match(fnRx);
-            if (fnMatch) {
-                const fname = fnMatch[1];
-                const dname = { asin:'sin⁻¹', acos:'cos⁻¹', atan:'tan⁻¹', log10:'log', log:'ln' }[fname] || fname;
-                const openIdx = i + fname.length;
-                const closeIdx = this.findMatchingParen(str, openIdx);
-                if (closeIdx === -1) {
-                    html += `<span class="disp-fn">${dname}</span>(`;
-                    i += fname.length + 1; continue;
-                }
-                const inner = str.slice(openIdx + 1, closeIdx);
-                const innerStart = openIdx + 1;
-                const innerCur = (cur >= innerStart && cur <= innerStart + inner.length) ? cur - innerStart : -1;
-                const innerHtml = inner
-                    ? this.renderToHtml(inner, innerCur)
-                    : (innerCur === 0 ? '<span class="disp-cursor"></span>' : '');
-                html += `<span class="disp-fn">${dname}</span>(<span class="disp-fn-body">${innerHtml}</span>)`;
-                i = closeIdx + 1; continue;
-            }
-
-            // ── Power: ^(...) or ^char ──────────────────────
-            if (ch === '^') {
-                if (i + 1 < str.length && str[i + 1] === '(') {
-                    const closeIdx = this.findMatchingParen(str, i + 1);
-                    if (closeIdx === -1) {
-                        const innerStart = i + 2;
-                        const innerStr = str.slice(innerStart);
-                        const innerCur = cur >= innerStart ? cur - innerStart : -1;
-                        html += `<sup>${innerStr ? this.renderToHtml(innerStr, innerCur) : (innerCur === 0 ? '<span class="disp-cursor"></span>' : '')}</sup>`;
-                        i = str.length; continue;
-                    }
-                    const inner = str.slice(i + 2, closeIdx);
-                    const innerStart = i + 2;
-                    const innerCur = (cur >= innerStart && cur <= innerStart + inner.length) ? cur - innerStart : -1;
-                    const innerHtml = inner
-                        ? this.renderToHtml(inner, innerCur)
-                        : (innerCur === 0 ? '<span class="disp-cursor"></span>' : '<span class="disp-slot">□</span>');
-                    html += `<sup>${innerHtml}</sup>`;
-                    i = closeIdx + 1;
-                } else {
-                    const nc = str[i + 1] || '';
-                    html += '<sup>';
-                    if (cur === i + 1) html += '<span class="disp-cursor"></span>';
-                    html += this.escapeHtml(nc);
-                    if (cur === i + 2) html += '<span class="disp-cursor"></span>';
-                    html += '</sup>';
-                    i += 2;
-                }
-                continue;
-            }
-
-            // ── Special replacements ────────────────────────
-            if (rest.startsWith('pi'))  { html += 'π'; i += 2; continue; }
-            if (ch === '*') { html += '<span class="disp-op">×</span>'; i++; continue; }
-            if (ch === '/') { html += '<span class="disp-op">÷</span>'; i++; continue; }
-            if (ch === '-') { html += '<span class="disp-op">−</span>'; i++; continue; }
-            if (ch === '+') { html += '<span class="disp-op">+</span>'; i++; continue; }
-
-            html += this.escapeHtml(ch);
-            i++;
-        }
-        return html;
-    }
-
-    findMatchingParen(str, parenIdx) {
-        let depth = 0;
-        for (let i = parenIdx; i < str.length; i++) {
-            if (str[i] === '(') depth++;
-            else if (str[i] === ')') { depth--; if (depth === 0) return i; }
-        }
-        return -1;
-    }
-
-    findTopLevelComma(str) {
-        let depth = 0;
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === '(') depth++;
-            else if (str[i] === ')') depth--;
-            else if (str[i] === ',' && depth === 0) return i;
-        }
-        return -1;
-    }
-
-    // ── Cursor-aware insertion ────────────────────────────────
-    insertAtCursor(value) {
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const after  = this.currentInput.slice(this.cursorPos);
-        this.currentInput = before + value + after;
-        this.cursorPos += value.length;
-    }
-
+    // ── Core display operations ──────────────────────────────
     appendToDisplay(value) {
+        const input = this.getDisplayInput();
+        if (!input) return;
+
         if (this.resultShown) {
-            const isChainOp = /^[+\-*/^]/.test(value);
-            if (!isChainOp) { this.currentInput = ''; this.cursorPos = 0; }
+            const isChainOp = /^[+\-×÷*/^]/.test(value);
+            if (!isChainOp) input.value = '';
+            input.classList.remove('result-mode');
             this.resultShown = false;
         }
-        this.insertAtCursor(value);
-        this.renderDisplay();
+
+        // Pretty-print common tokens in the input
+        let dv = value;
+        if (value === 'pi') dv = 'π';
+        else if (value === '*') dv = '×';
+        else if (value === '/') dv = '÷';
+
+        const s = input.selectionStart ?? input.value.length;
+        const e = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, s) + dv + input.value.slice(e);
+        const pos = s + dv.length;
+        input.focus();
+        input.setSelectionRange(pos, pos);
+        this.currentInput = input.value;
     }
 
     clear() {
-        this.currentInput = ''; this.cursorPos = 0; this.resultShown = false;
-        this.renderDisplay();
+        const input = this.getDisplayInput();
+        if (input) { input.value = ''; input.classList.remove('result-mode'); input.focus(); }
+        this.currentInput = '';
+        this.resultShown  = false;
         const prev = document.getElementById('display-prev');
         if (prev) prev.textContent = '';
     }
 
     backspace() {
+        const input = this.getDisplayInput();
+        if (!input) return;
         if (this.resultShown) { this.clear(); return; }
-        if (this.cursorPos === 0) return;
 
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const atoms = ['asin(','acos(','atan(','log10(','sqrt(','sin(','cos(','tan(',
-                        'log(','abs(','frac(','pi','10^(','e^('];
-        let eaten = false;
-        for (const atom of atoms) {
-            if (before.endsWith(atom)) {
-                this.currentInput = before.slice(0, -atom.length) + this.currentInput.slice(this.cursorPos);
-                this.cursorPos -= atom.length;
-                eaten = true; break;
+        const s = input.selectionStart, e = input.selectionEnd;
+        if (s !== e) {
+            input.value = input.value.slice(0, s) + input.value.slice(e);
+            input.focus(); input.setSelectionRange(s, s);
+        } else if (s > 0) {
+            const before = input.value.slice(0, s);
+            const atoms = ['asin(','acos(','atan(','log10(','sqrt(','sin(','cos(','tan(','log(','abs('];
+            let eaten = false;
+            for (const atom of atoms) {
+                if (before.endsWith(atom)) {
+                    input.value = before.slice(0, -atom.length) + input.value.slice(s);
+                    input.focus(); input.setSelectionRange(s - atom.length, s - atom.length);
+                    eaten = true; break;
+                }
+            }
+            if (!eaten) {
+                input.value = before.slice(0, -1) + input.value.slice(s);
+                input.focus(); input.setSelectionRange(s - 1, s - 1);
             }
         }
-        if (!eaten) {
-            this.currentInput = before.slice(0, -1) + this.currentInput.slice(this.cursorPos);
-            this.cursorPos--;
-        }
-        this.renderDisplay();
+        this.currentInput = input.value;
     }
 
     // ── ANS ──────────────────────────────────────────────────
     appendAns() {
         if (this.lastAnswer === null || this.lastAnswer === undefined) return;
         const s = String(this.lastAnswer);
+        const input = this.getDisplayInput();
+        if (!input) return;
         if (this.resultShown) {
-            this.currentInput = s; this.cursorPos = s.length; this.resultShown = false;
+            input.value = s;
+            input.classList.remove('result-mode');
+            this.resultShown = false;
+            input.focus();
+            input.setSelectionRange(s.length, s.length);
         } else {
-            this.insertAtCursor(s);
+            const start = input.selectionStart ?? input.value.length;
+            const end   = input.selectionEnd   ?? input.value.length;
+            input.value = input.value.slice(0, start) + s + input.value.slice(end);
+            const pos = start + s.length;
+            input.focus();
+            input.setSelectionRange(pos, pos);
         }
-        this.renderDisplay();
+        this.currentInput = input.value;
     }
 
     // ── 2nd / Shift ───────────────────────────────────────────
@@ -316,81 +183,88 @@ class Calculator {
             sin:  s ? ['asin()', 1] : ['sin()', 1],
             cos:  s ? ['acos()', 1] : ['cos()', 1],
             tan:  s ? ['atan()', 1] : ['tan()', 1],
-            log:  s ? ['10^()', 1]  : ['log10()', 1],
-            ln:   s ? ['e^()', 1]   : ['log()', 1],
-            sqrt: s ? ['^(2)', 2]   : ['sqrt()', 1],
+            log:  s ? ['10^()', 2]  : ['log10()', 1],
+            ln:   s ? ['e^()', 2]   : ['log()', 1],
+            sqrt: s ? ['^()', 2]    : ['sqrt()', 1],
         };
         const entry = map[fn];
         if (!entry) return;
         const [insertStr, backOffset] = entry;
         if (this.shiftActive) this.toggleShift();
-        if (this.resultShown) { this.currentInput = ''; this.cursorPos = 0; this.resultShown = false; }
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const after  = this.currentInput.slice(this.cursorPos);
-        this.currentInput = before + insertStr + after;
-        this.cursorPos += insertStr.length - backOffset;
-        this.renderDisplay();
+
+        const input = this.getDisplayInput();
+        if (!input) return;
+        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
+
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + insertStr + input.value.slice(end);
+        const pos = start + insertStr.length - backOffset;
+        input.focus();
+        input.setSelectionRange(pos, pos);
+        this.currentInput = input.value;
     }
 
     insertFraction() {
-        if (this.resultShown) { this.currentInput = ''; this.cursorPos = 0; this.resultShown = false; }
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const after  = this.currentInput.slice(this.cursorPos);
-        this.currentInput = before + 'frac(,)' + after;
-        this.cursorPos += 5;
-        this.renderDisplay();
+        const input = this.getDisplayInput();
+        if (!input) return;
+        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
+        const insert = '()÷()';
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
+        input.focus();
+        input.setSelectionRange(start + 1, start + 1); // cursor inside first ()
+        this.currentInput = input.value;
     }
 
     insertPower() {
-        if (this.resultShown) { this.currentInput = ''; this.cursorPos = 0; this.resultShown = false; }
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const after  = this.currentInput.slice(this.cursorPos);
-        this.currentInput = before + '^()' + after;
-        this.cursorPos += 2;
-        this.renderDisplay();
+        const input = this.getDisplayInput();
+        if (!input) return;
+        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
+        const insert = '^()';
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
+        input.focus();
+        input.setSelectionRange(start + 2, start + 2); // cursor inside ^(|)
+        this.currentInput = input.value;
     }
 
     insertAbs() {
-        if (this.resultShown) { this.currentInput = ''; this.cursorPos = 0; this.resultShown = false; }
-        const before = this.currentInput.slice(0, this.cursorPos);
-        const after  = this.currentInput.slice(this.cursorPos);
-        this.currentInput = before + 'abs()' + after;
-        this.cursorPos += 4;
-        this.renderDisplay();
-    }
-
-    moveCursorPastDelimiter() {
-        const str = this.currentInput;
-        let depth = 0;
-        for (let i = this.cursorPos; i < str.length; i++) {
-            if (str[i] === '(') depth++;
-            else if (str[i] === ')') {
-                if (depth === 0) { this.cursorPos = i + 1; this.renderDisplay(); return; }
-                depth--;
-            } else if (str[i] === ',' && depth === 0) {
-                this.cursorPos = i + 1; this.renderDisplay(); return;
-            }
-        }
+        const input = this.getDisplayInput();
+        if (!input) return;
+        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
+        const insert = 'abs()';
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
+        input.focus();
+        input.setSelectionRange(start + 4, start + 4); // cursor inside abs(|)
+        this.currentInput = input.value;
     }
 
     toggleSign() {
-        if (!this.currentInput) return;
-        if (this.currentInput.startsWith('-')) {
-            this.currentInput = this.currentInput.slice(1);
-            this.cursorPos = Math.max(0, this.cursorPos - 1);
+        const input = this.getDisplayInput();
+        if (!input || !input.value) return;
+        if (input.value.startsWith('-')) {
+            input.value = input.value.slice(1);
         } else {
-            this.currentInput = '-' + this.currentInput;
-            this.cursorPos++;
+            input.value = '-' + input.value;
         }
-        this.renderDisplay();
+        this.currentInput = input.value;
+        input.focus();
     }
 
     // ── Calculate ─────────────────────────────────────────────
     calculate() {
-        try {
-            if (!this.currentInput) return;
-            const expression = this.currentInput;
+        const input = this.getDisplayInput();
+        if (!input) return;
+        const expression = input.value;
+        if (!expression) return;
 
+        try {
+            const raw = this.getExpressionForEval(expression);
             const scope = { frac: (a, b) => a / b };
             if (this.angleMode === 'deg') {
                 Object.assign(scope, {
@@ -401,20 +275,18 @@ class Calculator {
                     acos: x => Math.acos(x) * 180 / Math.PI,
                     atan: x => Math.atan(x) * 180 / Math.PI,
                 });
-            } else {
-                scope.frac = (a, b) => a / b;
             }
 
-            let result = math.evaluate(expression, scope);
+            let result = math.evaluate(raw, scope);
 
             const prevEl = document.getElementById('display-prev');
             if (prevEl) prevEl.textContent = expression + ' =';
 
+            input.value = String(result);
+            input.classList.add('result-mode');
+            this.lastAnswer  = result;
+            this.resultShown = true;
             this.currentInput = String(result);
-            this.cursorPos    = this.currentInput.length;
-            this.lastAnswer   = result;
-            this.resultShown  = true;
-            this.renderDisplay();
 
             const ansEl = document.getElementById('display-ans');
             if (ansEl) ansEl.textContent = `Ans = ${result}`;
@@ -422,9 +294,15 @@ class Calculator {
             this.addToCalcHistory(expression, result);
 
         } catch {
-            const el = document.getElementById('display');
-            if (el) { el.textContent = 'Error'; el.classList.add('result-mode'); }
-            setTimeout(() => this.clear(), 1500);
+            input.value = 'Error';
+            input.classList.add('result-mode');
+            setTimeout(() => {
+                input.value = '';
+                input.classList.remove('result-mode');
+                this.currentInput = '';
+                this.resultShown = false;
+                input.focus();
+            }, 1500);
         }
     }
 
@@ -434,13 +312,15 @@ class Calculator {
     memoryRecall() { this.appendToDisplay(String(this.memoryValue)); }
 
     memoryAdd() {
-        const v = this.resultShown ? parseFloat(this.currentInput) : 0;
+        const input = this.getDisplayInput();
+        const v = this.resultShown ? parseFloat(input?.value || '0') : 0;
         this.memoryValue += (isNaN(v) ? 0 : v);
         this.updateMemoryDisplay();
     }
 
     memorySubtract() {
-        const v = this.resultShown ? parseFloat(this.currentInput) : 0;
+        const input = this.getDisplayInput();
+        const v = this.resultShown ? parseFloat(input?.value || '0') : 0;
         this.memoryValue -= (isNaN(v) ? 0 : v);
         this.updateMemoryDisplay();
     }
@@ -463,8 +343,9 @@ class Calculator {
 
     // ── Clipboard ─────────────────────────────────────────────
     copyResult() {
-        if (!this.resultShown || !this.currentInput) return;
-        navigator.clipboard.writeText(this.currentInput).then(() => {
+        const input = this.getDisplayInput();
+        if (!this.resultShown || !input?.value) return;
+        navigator.clipboard.writeText(input.value).then(() => {
             const btn = document.getElementById('copy-btn');
             if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = o, 2000); }
         }).catch(() => {});
@@ -503,10 +384,13 @@ class Calculator {
     loadFromHistory(index) {
         const item = this.calcHistory[index];
         if (!item) return;
+        const input = this.getDisplayInput();
+        if (!input) return;
+        input.value = String(item.result);
+        input.classList.remove('result-mode');
         this.currentInput = String(item.result);
-        this.cursorPos    = this.currentInput.length;
         this.resultShown  = false;
-        this.renderDisplay();
+        input.focus();
         const prev = document.getElementById('display-prev');
         if (prev) prev.textContent = item.expression + ' =';
     }
@@ -546,10 +430,8 @@ class Calculator {
         input.value = ''; input.focus();
     }
 
-    // ── Equation Solver (legacy stub) ─────────────────────────
-    solveEquation() { this.solveUnified(); }
-
-    // ── Quadratic Solver (legacy stub) ────────────────────────
+    // ── Equation Solver (legacy stubs) ────────────────────────
+    solveEquation()  { this.solveUnified(); }
     solveQuadratic() { this.solveUnified(); }
 
     // ── Simultaneous Equations ────────────────────────────────
@@ -950,27 +832,31 @@ class Calculator {
 const calculator = new Calculator();
 
 document.addEventListener('DOMContentLoaded', () => {
+    const display = document.getElementById('display');
+
+    if (display) {
+        display.focus();
+        display.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); calculator.calculate(); }
+            else if (e.key === 'Escape') { e.preventDefault(); calculator.clear(); }
+        });
+        // Keep currentInput mirror in sync when user types directly
+        display.addEventListener('input', () => {
+            calculator.currentInput = display.value;
+            if (calculator.resultShown) {
+                display.classList.remove('result-mode');
+                calculator.resultShown = false;
+            }
+        });
+    }
+
     document.addEventListener('keydown', e => {
         if (document.activeElement.classList.contains('solver-input')) return;
-
-        if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
-            calculator.appendToDisplay(e.key);
-        } else if (['+','-','*','/'].includes(e.key)) {
-            calculator.appendToDisplay(e.key);
-        } else if (e.key === 'Enter') {
-            e.preventDefault(); calculator.calculate();
-        } else if (e.key === 'Escape') {
-            calculator.clear();
-        } else if (e.key === 'Backspace') {
-            e.preventDefault(); calculator.backspace();
-        } else if (e.key.toLowerCase() === 'a') {
-            calculator.appendAns();
-        } else if (e.key === 'Tab') {
-            e.preventDefault(); calculator.moveCursorPastDelimiter();
-        } else if (e.key === 'ArrowLeft') {
-            if (calculator.cursorPos > 0) { calculator.cursorPos--; calculator.renderDisplay(); }
-        } else if (e.key === 'ArrowRight') {
-            if (calculator.cursorPos < calculator.currentInput.length) { calculator.cursorPos++; calculator.renderDisplay(); }
+        // Redirect bare keypresses to the display input if it isn't focused
+        if (document.activeElement !== display && display) {
+            if (/^[0-9+\-*/.^()e]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                display.focus();
+            }
         }
     });
 
