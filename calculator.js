@@ -925,6 +925,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (display) {
         display.smartFence = false;
         display.virtualKeyboardMode = 'off';
+        // Suppress native on-screen keyboard on mobile (MathLive uses a hidden textarea internally)
+        const suppressNativeKb = () => {
+            const ta = display.shadowRoot?.querySelector('textarea');
+            if (ta) ta.setAttribute('inputmode', 'none');
+        };
+        suppressNativeKb();
+        setTimeout(suppressNativeKb, 500);
 
         display.addEventListener('keydown', e => {
             if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); calculator.calculate(); }

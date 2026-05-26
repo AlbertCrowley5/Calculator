@@ -84,7 +84,7 @@
                 <div class="calc-panel active" id="basic-mode">
                     <div class="calc-display-area">
                         <div class="display-prev" id="display-prev"></div>
-                        <math-field id="display" class="display" virtual-keyboard-mode="off"></math-field>
+                        <math-field id="display" class="display" virtual-keyboard-mode="off" inputmode="none"></math-field>
                         <div class="display-ans" id="display-ans"></div>
                     </div>
                     <div class="history-strip" id="history-strip">
@@ -126,7 +126,7 @@
                                     title="Show complex (imaginary) answers using i">Show complex</button>
                             </div>
                         </div>
-                        <input type="text" class="solver-input" id="equations-input" placeholder="e.g.  x^2 + 5x + 6 = 0">
+                        <input type="text" class="solver-input" id="equations-input" inputmode="none" placeholder="e.g.  x^2 + 5x + 6 = 0">
                         <button class="panel-solve-btn" onclick="calculator.solveUnified()">⚡ Solve</button>
                         <div class="solution-display" id="equations-solution"></div>
                     </div>
@@ -142,7 +142,7 @@
                                 <div class="hint-example">Try: <code>x^2 + 5x + 6</code> &nbsp;or&nbsp; <code>6x^2 + 9x</code></div>
                             </div>
                         </div>
-                        <input type="text" class="solver-input" id="factorise-input" placeholder="e.g.  x^2 + 5x + 6">
+                        <input type="text" class="solver-input" id="factorise-input" inputmode="none" placeholder="e.g.  x^2 + 5x + 6">
                         <button class="panel-solve-btn" onclick="calculator.factorise()">⚡ Factorise</button>
                         <div class="solution-display" id="factorise-solution"></div>
                     </div>
@@ -158,7 +158,7 @@
                                 <div class="hint-example">Try: <code>(x + 2)(x + 3)</code> &nbsp;or&nbsp; <code>3(2x + 1)</code></div>
                             </div>
                         </div>
-                        <input type="text" class="solver-input" id="expand-input" placeholder="e.g.  (x + 2)(x + 3)">
+                        <input type="text" class="solver-input" id="expand-input" inputmode="none" placeholder="e.g.  (x + 2)(x + 3)">
                         <button class="panel-solve-btn" onclick="calculator.expand()">⚡ Expand</button>
                         <div class="solution-display" id="expand-solution"></div>
                     </div>
@@ -175,9 +175,9 @@
                             </div>
                         </div>
                         <label class="input-label">First equation</label>
-                        <input type="text" class="solver-input" id="sim-eq1" placeholder="e.g.  2x + 3y = 13">
+                        <input type="text" class="solver-input" id="sim-eq1" inputmode="none" placeholder="e.g.  2x + 3y = 13">
                         <label class="input-label">Second equation</label>
-                        <input type="text" class="solver-input" id="sim-eq2" placeholder="e.g.  x - y = -1">
+                        <input type="text" class="solver-input" id="sim-eq2" inputmode="none" placeholder="e.g.  x - y = -1">
                         <button class="panel-solve-btn" onclick="calculator.solveSimultaneous()">⚡ Solve</button>
                         <div class="solution-display" id="simultaneous-solution"></div>
                     </div>
@@ -194,13 +194,13 @@
                             </div>
                         </div>
                         <label class="input-label">Define f(x) =</label>
-                        <input type="text" class="solver-input" id="function-def" placeholder="e.g.  x^2 + 2x + 1">
+                        <input type="text" class="solver-input" id="function-def" inputmode="none" placeholder="e.g.  x^2 + 2x + 1">
                         <label class="input-label">Evaluate at x =</label>
-                        <input type="text" class="solver-input" id="function-x" placeholder="e.g.  5">
+                        <input type="text" class="solver-input" id="function-x" inputmode="none" placeholder="e.g.  5">
                         <button class="panel-solve-btn" onclick="calculator.evaluateFunction()">⚡ Evaluate f(x)</button>
                         <div class="section-divider"></div>
                         <label class="input-label">Or: find x when f(x) =</label>
-                        <input type="text" class="solver-input" id="function-value" placeholder="e.g.  0">
+                        <input type="text" class="solver-input" id="function-value" inputmode="none" placeholder="e.g.  0">
                         <button class="panel-solve-btn secondary" onclick="calculator.solveFunctionEquation()">⚡ Solve for x</button>
                         <div class="solution-display" id="function-solution"></div>
                     </div>
