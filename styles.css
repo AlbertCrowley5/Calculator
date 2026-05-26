@@ -891,28 +891,19 @@ input  { font-family: inherit; }
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Main expression display — was <input>, now <div> */
+/* Main expression display */
 .display {
     width: 100%; min-height: 44px;
     padding: clamp(4px,1vw,8px) 0;
     font-size: clamp(1.5rem,4.5vw,2.1rem);
     text-align: right; background: transparent;
     color: var(--text); font-family: 'Courier New', monospace;
-    font-weight: 600; word-break: break-all; line-height: 1.2;
-    position: relative; outline: none;
+    font-weight: 600; line-height: 1.2;
+    outline: none; border: none;
+    caret-color: var(--accent);
 }
-
-/* Blinking cursor shown while entering an expression */
-.display:not(.result-mode)::after {
-    content: '';
-    display: inline-block;
-    width: 2px; height: 0.9em;
-    background: var(--accent);
-    margin-left: 3px;
-    vertical-align: middle;
-    animation: cur-blink 1s step-end infinite;
-}
-@keyframes cur-blink { 0%,100%{ opacity:1; } 50%{ opacity:0; } }
+.display::selection { background: rgba(129,140,248,0.3); }
+.display::placeholder { color: var(--text-3); opacity: 0.45; }
 
 /* When showing a result, style differently */
 .display.result-mode { color: var(--accent); }
@@ -1107,112 +1098,6 @@ input  { font-family: inherit; }
 .solver-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-light);
-}
-
-/* ============================================================
-   VISUAL EXPRESSION RENDERER
-   ============================================================ */
-
-/* Remove the old ::after cursor — renderer injects its own */
-.display::after { display: none; content: none; animation: none; }
-
-/* Blinking cursor span injected by renderToHtml */
-.disp-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 0.85em;
-    background: var(--accent);
-    vertical-align: middle;
-    margin: 0 1px;
-    animation: cur-blink 1s step-end infinite;
-    border-radius: 1px;
-    flex-shrink: 0;
-}
-/* cur-blink is already defined above; if not, define here */
-@keyframes cur-blink { 0%,100%{ opacity:1; } 50%{ opacity:0; } }
-
-/* Operator spans */
-.disp-op { color: var(--accent); padding: 0 2px; }
-
-/* Function names: sin, cos, ln, log etc. */
-.disp-fn {
-    color: var(--accent-2);
-    font-size: 0.78em;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    padding-right: 1px;
-}
-.disp-fn-body { /* content inside function parens */ }
-
-/* abs |x| */
-.disp-abs { display: inline; color: var(--accent-2); font-weight: 700; }
-.disp-abs-body { display: inline; }
-
-/* ── Square root ────────────────────────────────────────────── */
-.disp-sqrt {
-    display: inline-flex;
-    align-items: stretch;
-    vertical-align: middle;
-    margin: 0 1px;
-}
-
-.disp-sqrt-sign {
-    font-size: 1.25em;
-    line-height: 1;
-    display: flex;
-    align-items: flex-end;
-    padding-bottom: 1px;
-    color: var(--text);
-}
-
-.disp-sqrt-body {
-    display: inline-block;
-    border-top: 2px solid var(--text);
-    padding: 1px 4px 0;
-    min-width: 8px;
-    position: relative;
-    top: 1px;
-}
-
-/* ── Fraction ─────────────────────────────────────────────── */
-.disp-frac {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    vertical-align: middle;
-    margin: 0 3px;
-    line-height: 1.25;
-    font-size: 0.88em;
-}
-
-.disp-num {
-    border-bottom: 1.5px solid var(--text);
-    padding: 1px 5px;
-    min-width: 14px;
-    text-align: center;
-    line-height: 1.4;
-}
-
-.disp-den {
-    padding: 1px 5px;
-    min-width: 14px;
-    text-align: center;
-    line-height: 1.4;
-}
-
-/* Superscript alignment */
-.display sup {
-    font-size: 0.65em;
-    vertical-align: super;
-    line-height: 0;
-    color: var(--text);
-}
-
-/* Empty slot placeholder in fraction/sqrt/power */
-.disp-slot {
-    opacity: 0.28;
-    font-size: 0.7em;
-    vertical-align: middle;
 }
 
 /* ── Fraction button icon ──────────────────────────────────── */
