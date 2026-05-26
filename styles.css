@@ -891,21 +891,24 @@ input  { font-family: inherit; }
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Main expression display */
+/* Main expression display — MathLive math-field */
 .display {
-    width: 100%; min-height: 44px;
+    width: 100%; min-height: 44px; display: block;
     padding: clamp(4px,1vw,8px) 0;
     font-size: clamp(1.5rem,4.5vw,2.1rem);
-    text-align: right; background: transparent;
-    color: var(--text); font-family: 'Courier New', monospace;
-    font-weight: 600; line-height: 1.2;
-    outline: none; border: none;
-    caret-color: var(--accent);
+    background: transparent !important;
+    color: var(--text);
+    font-weight: 600; line-height: 1.4;
+    outline: none; border: none !important;
+    box-shadow: none !important;
+    /* MathLive accent / caret colours */
+    --primary-color: var(--accent);
+    --highlight-background-color: rgba(129,140,248,0.25);
+    --caret-color: var(--accent);
+    --selection-background-color-focused: rgba(129,140,248,0.35);
 }
-.display::selection { background: rgba(129,140,248,0.3); }
-.display::placeholder { color: var(--text-3); opacity: 0.45; }
 
-/* When showing a result, style differently */
+/* Accent colour on the result number */
 .display.result-mode { color: var(--accent); }
 
 .display-ans {

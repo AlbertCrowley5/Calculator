@@ -78,41 +78,55 @@ class Calculator {
     // ── Display helpers ──────────────────────────────────────
     getDisplayInput() { return document.getElementById('display'); }
 
-    // Transform display chars (×÷π) back to math.js-compatible form
-    getExpressionForEval(str) {
-        return str.replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'pi');
+    // Convert MathLive ascii-math output to math.js-evaluable expression
+    getExpressionForEval(asciiMath) {
+        return asciiMath
+            .replace(/arcsin/g, 'asin')
+            .replace(/arccos/g, 'acos')
+            .replace(/arctan/g, 'atan')
+            .replace(/\bln\b/g, 'log')
+            .replace(/log_\(?\s*10\s*\)?/g, 'log10')
+            .replace(/\bxx\b/g, '*');
     }
 
     // ── Core display operations ──────────────────────────────
     appendToDisplay(value) {
-        const input = this.getDisplayInput();
-        if (!input) return;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
 
         if (this.resultShown) {
-            const isChainOp = /^[+\-×÷*/^]/.test(value);
-            if (!isChainOp) input.value = '';
-            input.classList.remove('result-mode');
+            const isChainOp = /^[+\-*/^]/.test(value);
+            if (!isChainOp) mf.setValue('');
+            mf.classList.remove('result-mode');
             this.resultShown = false;
         }
 
-        // Pretty-print common tokens in the input
-        let dv = value;
-        if (value === 'pi') dv = 'π';
-        else if (value === '*') dv = '×';
-        else if (value === '/') dv = '÷';
+        const latexMap = {
+            'pi':     '\\pi',
+            '*':      '\\times',
+            '/':      '\\frac{#@}{#?}',
+            'sqrt(':  '\\sqrt{#?}',
+            'sin(':   '\\sin\\left(#?\\right)',
+            'cos(':   '\\cos\\left(#?\\right)',
+            'tan(':   '\\tan\\left(#?\\right)',
+            'asin(':  '\\arcsin\\left(#?\\right)',
+            'acos(':  '\\arccos\\left(#?\\right)',
+            'atan(':  '\\arctan\\left(#?\\right)',
+            'log(':   '\\ln\\left(#?\\right)',
+            'log10(': '\\log_{10}\\left(#?\\right)',
+            'ln(':    '\\ln\\left(#?\\right)',
+            'abs(':   '\\left|#?\\right|',
+            'EXP':    '\\times10^{#?}',
+        };
 
-        const s = input.selectionStart ?? input.value.length;
-        const e = input.selectionEnd   ?? input.value.length;
-        input.value = input.value.slice(0, s) + dv + input.value.slice(e);
-        const pos = s + dv.length;
-        input.focus();
-        input.setSelectionRange(pos, pos);
-        this.currentInput = input.value;
+        const latex = latexMap[value] ?? value;
+        mf.insert(latex, { focus: true });
+        this.currentInput = mf.getValue();
     }
 
     clear() {
-        const input = this.getDisplayInput();
-        if (input) { input.value = ''; input.classList.remove('result-mode'); input.focus(); }
+        const mf = this.getDisplayInput();
+        if (mf) { mf.setValue(''); mf.classList.remove('result-mode'); mf.focus(); }
         this.currentInput = '';
         this.resultShown  = false;
         const prev = document.getElementById('display-prev');
@@ -120,54 +134,27 @@ class Calculator {
     }
 
     backspace() {
-        const input = this.getDisplayInput();
-        if (!input) return;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
         if (this.resultShown) { this.clear(); return; }
-
-        const s = input.selectionStart, e = input.selectionEnd;
-        if (s !== e) {
-            input.value = input.value.slice(0, s) + input.value.slice(e);
-            input.focus(); input.setSelectionRange(s, s);
-        } else if (s > 0) {
-            const before = input.value.slice(0, s);
-            const atoms = ['asin(','acos(','atan(','log10(','sqrt(','sin(','cos(','tan(','log(','abs('];
-            let eaten = false;
-            for (const atom of atoms) {
-                if (before.endsWith(atom)) {
-                    input.value = before.slice(0, -atom.length) + input.value.slice(s);
-                    input.focus(); input.setSelectionRange(s - atom.length, s - atom.length);
-                    eaten = true; break;
-                }
-            }
-            if (!eaten) {
-                input.value = before.slice(0, -1) + input.value.slice(s);
-                input.focus(); input.setSelectionRange(s - 1, s - 1);
-            }
-        }
-        this.currentInput = input.value;
+        mf.executeCommand('deleteBackward');
+        this.currentInput = mf.getValue();
     }
 
     // ── ANS ──────────────────────────────────────────────────
     appendAns() {
         if (this.lastAnswer === null || this.lastAnswer === undefined) return;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
         const s = String(this.lastAnswer);
-        const input = this.getDisplayInput();
-        if (!input) return;
         if (this.resultShown) {
-            input.value = s;
-            input.classList.remove('result-mode');
+            mf.setValue(s);
+            mf.classList.remove('result-mode');
             this.resultShown = false;
-            input.focus();
-            input.setSelectionRange(s.length, s.length);
         } else {
-            const start = input.selectionStart ?? input.value.length;
-            const end   = input.selectionEnd   ?? input.value.length;
-            input.value = input.value.slice(0, start) + s + input.value.slice(end);
-            const pos = start + s.length;
-            input.focus();
-            input.setSelectionRange(pos, pos);
+            mf.insert(s, { focus: true });
         }
-        this.currentInput = input.value;
+        this.currentInput = mf.getValue();
     }
 
     // ── 2nd / Shift ───────────────────────────────────────────
@@ -179,92 +166,77 @@ class Calculator {
 
     pressFunction(fn) {
         const s = this.shiftActive;
-        const map = {
-            sin:  s ? ['asin()', 1] : ['sin()', 1],
-            cos:  s ? ['acos()', 1] : ['cos()', 1],
-            tan:  s ? ['atan()', 1] : ['tan()', 1],
-            log:  s ? ['10^()', 2]  : ['log10()', 1],
-            ln:   s ? ['e^()', 2]   : ['log()', 1],
-            sqrt: s ? ['^()', 2]    : ['sqrt()', 1],
+        const latexMap = {
+            sin:  s ? '\\arcsin\\left(#?\\right)' : '\\sin\\left(#?\\right)',
+            cos:  s ? '\\arccos\\left(#?\\right)' : '\\cos\\left(#?\\right)',
+            tan:  s ? '\\arctan\\left(#?\\right)' : '\\tan\\left(#?\\right)',
+            log:  s ? '10^{#?}'                   : '\\log_{10}\\left(#?\\right)',
+            ln:   s ? 'e^{#?}'                    : '\\ln\\left(#?\\right)',
+            sqrt: s ? '^{#?}'                     : '\\sqrt{#?}',
         };
-        const entry = map[fn];
-        if (!entry) return;
-        const [insertStr, backOffset] = entry;
+        const latex = latexMap[fn];
+        if (!latex) return;
         if (this.shiftActive) this.toggleShift();
 
-        const input = this.getDisplayInput();
-        if (!input) return;
-        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
-
-        const start = input.selectionStart ?? input.value.length;
-        const end   = input.selectionEnd   ?? input.value.length;
-        input.value = input.value.slice(0, start) + insertStr + input.value.slice(end);
-        const pos = start + insertStr.length - backOffset;
-        input.focus();
-        input.setSelectionRange(pos, pos);
-        this.currentInput = input.value;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        if (this.resultShown) {
+            mf.setValue('');
+            mf.classList.remove('result-mode');
+            this.resultShown = false;
+        }
+        mf.insert(latex, { focus: true });
+        this.currentInput = mf.getValue();
     }
 
     insertFraction() {
-        const input = this.getDisplayInput();
-        if (!input) return;
-        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
-        const insert = '()÷()';
-        const start = input.selectionStart ?? input.value.length;
-        const end   = input.selectionEnd   ?? input.value.length;
-        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
-        input.focus();
-        input.setSelectionRange(start + 1, start + 1); // cursor inside first ()
-        this.currentInput = input.value;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        if (this.resultShown) { mf.setValue(''); mf.classList.remove('result-mode'); this.resultShown = false; }
+        mf.insert('\\frac{#@}{#?}', { focus: true });
+        this.currentInput = mf.getValue();
     }
 
     insertPower() {
-        const input = this.getDisplayInput();
-        if (!input) return;
-        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
-        const insert = '^()';
-        const start = input.selectionStart ?? input.value.length;
-        const end   = input.selectionEnd   ?? input.value.length;
-        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
-        input.focus();
-        input.setSelectionRange(start + 2, start + 2); // cursor inside ^(|)
-        this.currentInput = input.value;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        if (this.resultShown) { mf.setValue(''); mf.classList.remove('result-mode'); this.resultShown = false; }
+        mf.insert('^{#?}', { focus: true });
+        this.currentInput = mf.getValue();
     }
 
     insertAbs() {
-        const input = this.getDisplayInput();
-        if (!input) return;
-        if (this.resultShown) { input.value = ''; input.classList.remove('result-mode'); this.resultShown = false; }
-        const insert = 'abs()';
-        const start = input.selectionStart ?? input.value.length;
-        const end   = input.selectionEnd   ?? input.value.length;
-        input.value = input.value.slice(0, start) + insert + input.value.slice(end);
-        input.focus();
-        input.setSelectionRange(start + 4, start + 4); // cursor inside abs(|)
-        this.currentInput = input.value;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        if (this.resultShown) { mf.setValue(''); mf.classList.remove('result-mode'); this.resultShown = false; }
+        mf.insert('\\left|#?\\right|', { focus: true });
+        this.currentInput = mf.getValue();
     }
 
     toggleSign() {
-        const input = this.getDisplayInput();
-        if (!input || !input.value) return;
-        if (input.value.startsWith('-')) {
-            input.value = input.value.slice(1);
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        const latex = mf.getValue('latex').trim();
+        if (!latex) { mf.insert('-', { focus: true }); return; }
+        if (latex.startsWith('-')) {
+            mf.setValue(latex.slice(1));
         } else {
-            input.value = '-' + input.value;
+            mf.setValue('-' + latex);
         }
-        this.currentInput = input.value;
-        input.focus();
+        this.currentInput = mf.getValue();
+        mf.focus();
     }
 
     // ── Calculate ─────────────────────────────────────────────
     calculate() {
-        const input = this.getDisplayInput();
-        if (!input) return;
-        const expression = input.value;
-        if (!expression) return;
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        const asciiMath = mf.getValue('ascii-math').trim();
+        if (!asciiMath) return;
+        const latexExpr = mf.getValue('latex');
 
         try {
-            const raw = this.getExpressionForEval(expression);
+            const raw = this.getExpressionForEval(asciiMath);
             const scope = { frac: (a, b) => a / b };
             if (this.angleMode === 'deg') {
                 Object.assign(scope, {
@@ -280,10 +252,10 @@ class Calculator {
             let result = math.evaluate(raw, scope);
 
             const prevEl = document.getElementById('display-prev');
-            if (prevEl) prevEl.textContent = expression + ' =';
+            if (prevEl) prevEl.textContent = asciiMath + ' =';
 
-            input.value = String(result);
-            input.classList.add('result-mode');
+            mf.setValue(String(result));
+            mf.classList.add('result-mode');
             this.lastAnswer  = result;
             this.resultShown = true;
             this.currentInput = String(result);
@@ -291,18 +263,16 @@ class Calculator {
             const ansEl = document.getElementById('display-ans');
             if (ansEl) ansEl.textContent = `Ans = ${result}`;
 
-            this.addToCalcHistory(expression, result);
+            this.addToCalcHistory(latexExpr, asciiMath, result);
 
         } catch {
-            input.value = 'Error';
-            input.classList.add('result-mode');
-            setTimeout(() => {
-                input.value = '';
-                input.classList.remove('result-mode');
-                this.currentInput = '';
-                this.resultShown = false;
-                input.focus();
-            }, 1500);
+            const prevEl = document.getElementById('display-prev');
+            if (prevEl) {
+                const saved = prevEl.textContent;
+                prevEl.textContent = 'Syntax error — check expression';
+                setTimeout(() => { prevEl.textContent = saved; }, 1500);
+            }
+            mf.focus();
         }
     }
 
@@ -312,15 +282,15 @@ class Calculator {
     memoryRecall() { this.appendToDisplay(String(this.memoryValue)); }
 
     memoryAdd() {
-        const input = this.getDisplayInput();
-        const v = this.resultShown ? parseFloat(input?.value || '0') : 0;
+        const mf = this.getDisplayInput();
+        const v = this.resultShown && mf ? parseFloat(mf.getValue('ascii-math') || '0') : 0;
         this.memoryValue += (isNaN(v) ? 0 : v);
         this.updateMemoryDisplay();
     }
 
     memorySubtract() {
-        const input = this.getDisplayInput();
-        const v = this.resultShown ? parseFloat(input?.value || '0') : 0;
+        const mf = this.getDisplayInput();
+        const v = this.resultShown && mf ? parseFloat(mf.getValue('ascii-math') || '0') : 0;
         this.memoryValue -= (isNaN(v) ? 0 : v);
         this.updateMemoryDisplay();
     }
@@ -343,17 +313,19 @@ class Calculator {
 
     // ── Clipboard ─────────────────────────────────────────────
     copyResult() {
-        const input = this.getDisplayInput();
-        if (!this.resultShown || !input?.value) return;
-        navigator.clipboard.writeText(input.value).then(() => {
+        const mf = this.getDisplayInput();
+        if (!this.resultShown || !mf) return;
+        const val = mf.getValue('ascii-math');
+        if (!val) return;
+        navigator.clipboard.writeText(val).then(() => {
             const btn = document.getElementById('copy-btn');
             if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = o, 2000); }
         }).catch(() => {});
     }
 
     // ── History ───────────────────────────────────────────────
-    addToCalcHistory(expression, result) {
-        this.calcHistory.unshift({ expression, result });
+    addToCalcHistory(latexExpr, asciiExpr, result) {
+        this.calcHistory.unshift({ latex: latexExpr, expression: asciiExpr, result });
         if (this.calcHistory.length > 50) this.calcHistory.pop();
         this.renderHistory();
     }
@@ -384,15 +356,15 @@ class Calculator {
     loadFromHistory(index) {
         const item = this.calcHistory[index];
         if (!item) return;
-        const input = this.getDisplayInput();
-        if (!input) return;
-        input.value = String(item.result);
-        input.classList.remove('result-mode');
-        this.currentInput = String(item.result);
+        const mf = this.getDisplayInput();
+        if (!mf) return;
+        mf.setValue(item.latex || String(item.result));
+        mf.classList.remove('result-mode');
+        this.currentInput = item.expression || '';
         this.resultShown  = false;
-        input.focus();
+        mf.focus();
         const prev = document.getElementById('display-prev');
-        if (prev) prev.textContent = item.expression + ' =';
+        if (prev) prev.textContent = (item.expression || '') + ' =';
     }
 
     // ── Solver math keyboard helpers ──────────────────────────
@@ -831,30 +803,38 @@ class Calculator {
 // ── Init ──────────────────────────────────────────────────────
 const calculator = new Calculator();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for MathLive custom element to be registered
+    await customElements.whenDefined('math-field');
+
     const display = document.getElementById('display');
 
     if (display) {
-        display.focus();
+        display.smartFence   = false;
+        display.virtualKeyboardMode = 'off';
+
         display.addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); calculator.calculate(); }
-            else if (e.key === 'Escape') { e.preventDefault(); calculator.clear(); }
+            if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); calculator.calculate(); }
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); calculator.clear(); }
         });
-        // Keep currentInput mirror in sync when user types directly
+
         display.addEventListener('input', () => {
-            calculator.currentInput = display.value;
+            calculator.currentInput = display.getValue ? display.getValue() : '';
             if (calculator.resultShown) {
                 display.classList.remove('result-mode');
                 calculator.resultShown = false;
             }
         });
+
+        display.focus();
     }
 
     document.addEventListener('keydown', e => {
         if (document.activeElement.classList.contains('solver-input')) return;
-        // Redirect bare keypresses to the display input if it isn't focused
         if (document.activeElement !== display && display) {
             if (/^[0-9+\-*/.^()e]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                display.executeCommand?.(['insert', e.key]);
                 display.focus();
             }
         }

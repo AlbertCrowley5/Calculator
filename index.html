@@ -6,6 +6,7 @@
     <title>Mathics — Advanced Mathematical Suite</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathlive/dist/mathlive.min.js"></script>
 </head>
 <body>
 
@@ -174,7 +175,7 @@
                             <!-- Display -->
                             <div class="calc-display-area">
                                 <div class="display-prev" id="display-prev"></div>
-                                <input type="text" class="display" id="display" placeholder="0" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="none">
+                                <math-field id="display" class="display" virtual-keyboard-mode="off"></math-field>
                                 <div class="display-ans" id="display-ans"></div>
                             </div>
 
