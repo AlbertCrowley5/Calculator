@@ -429,7 +429,7 @@ class Calculator {
     updateMemoryDisplay() {
         const el = document.getElementById('memory-display');
         if (!el) return;
-        el.textContent = `M: ${this.memoryValue}`;
+        el.textContent = String(this.memoryValue);
         el.classList.toggle('has-value', this.memoryValue !== 0);
         el.classList.add('flash');
         setTimeout(() => el.classList.remove('flash'), 400);
@@ -452,6 +452,11 @@ class Calculator {
             const btn = document.getElementById('copy-btn');
             if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 2000); }
         }).catch(() => {});
+    }
+
+    // ── Memory panel toggle ───────────────────────────────────
+    toggleMemory() {
+        document.getElementById('memory-panel')?.classList.toggle('visible');
     }
 
     // ── History ───────────────────────────────────────────────
