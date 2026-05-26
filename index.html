@@ -24,10 +24,6 @@
                 <a href="#about" class="nav-link">About</a>
             </div>
             <div class="nav-controls">
-                <div class="angle-toggle">
-                    <button class="angle-btn active" id="deg-btn" onclick="calculator.setAngleMode('deg')">DEG</button>
-                    <button class="angle-btn" id="rad-btn" onclick="calculator.setAngleMode('rad')">RAD</button>
-                </div>
                 <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
                     <span class="theme-icon">☀️</span>
                 </button>
@@ -56,7 +52,7 @@
                 <a href="#features" class="cta-secondary">Explore Features</a>
             </div>
             <div class="hero-stats">
-                <div class="hero-stat"><span class="stat-val">5</span><span class="stat-lbl">Solver Modes</span></div>
+                <div class="hero-stat"><span class="stat-val">6</span><span class="stat-lbl">Solver Modes</span></div>
                 <div class="stat-sep"></div>
                 <div class="hero-stat"><span class="stat-val">∞</span><span class="stat-lbl">Calculations</span></div>
                 <div class="stat-sep"></div>
@@ -69,473 +65,215 @@
 
     <!-- Calculator Section -->
     <section class="calc-section" id="calculator">
-        <div class="section-intro">
-            <h2>Mathematical Suite</h2>
-            <p>Select a solver mode from the left panel and start calculating</p>
-        </div>
-        <div class="calc-layout">
+        <div class="calc-app" id="calc-app">
 
-            <!-- Left Sidebar -->
-            <aside class="calc-sidebar">
-                <div class="sidebar-block mode-block">
-                    <h3 class="block-title">Solver Mode</h3>
-                    <nav class="mode-nav">
-                        <button class="mode-item active" data-mode="basic">
-                            <span class="mi-icon">⊞</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Standard</span>
-                                <span class="mi-desc">Arithmetic &amp; scientific</span>
-                            </span>
-                        </button>
-                        <button class="mode-item" data-mode="equations">
-                            <span class="mi-icon">x²</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Equations</span>
-                                <span class="mi-desc">Linear &amp; quadratic</span>
-                            </span>
-                        </button>
-                        <button class="mode-item" data-mode="factorise">
-                            <span class="mi-icon">ab</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Factorise</span>
-                                <span class="mi-desc">Factor expressions</span>
-                            </span>
-                        </button>
-                        <button class="mode-item" data-mode="expand">
-                            <span class="mi-icon">⟹</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Expand</span>
-                                <span class="mi-desc">Expand expressions</span>
-                            </span>
-                        </button>
-                        <button class="mode-item" data-mode="simultaneous">
-                            <span class="mi-icon">⩵</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Simultaneous</span>
-                                <span class="mi-desc">Systems of equations</span>
-                            </span>
-                        </button>
-                        <button class="mode-item" data-mode="function">
-                            <span class="mi-icon">ƒ</span>
-                            <span class="mi-body">
-                                <span class="mi-name">Functions</span>
-                                <span class="mi-desc">f(x) evaluation</span>
-                            </span>
-                        </button>
-                    </nav>
-                </div>
+            <!-- Mode Tabs -->
+            <nav class="mode-tabs">
+                <button class="mode-tab active" data-mode="basic">⊞ Calc</button>
+                <button class="mode-tab" data-mode="equations">x² Equations</button>
+                <button class="mode-tab" data-mode="factorise">ab Factorise</button>
+                <button class="mode-tab" data-mode="expand">⟹ Expand</button>
+                <button class="mode-tab" data-mode="simultaneous">⩵ Simult.</button>
+                <button class="mode-tab" data-mode="function">ƒ f(x)</button>
+            </nav>
 
-                <div class="sidebar-block memory-block">
-                    <h3 class="block-title">Memory</h3>
-                    <div class="memory-val" id="memory-display">M: 0</div>
-                    <div class="memory-btns">
-                        <button class="mbtn" onclick="calculator.memoryClear()" title="Memory Clear">MC</button>
-                        <button class="mbtn" onclick="calculator.memoryRecall()" title="Memory Recall">MR</button>
-                        <button class="mbtn" onclick="calculator.memoryAdd()" title="Memory Add">M+</button>
-                        <button class="mbtn" onclick="calculator.memorySubtract()" title="Memory Subtract">M−</button>
+            <!-- Mode Panels -->
+            <div class="calc-panels">
+
+                <!-- Basic / Calculator -->
+                <div class="calc-panel active" id="basic-mode">
+                    <div class="calc-display-area">
+                        <div class="display-prev" id="display-prev"></div>
+                        <math-field id="display" class="display" virtual-keyboard-mode="off"></math-field>
+                        <div class="display-ans" id="display-ans"></div>
+                    </div>
+                    <div class="history-strip" id="history-strip">
+                        <div class="hist-strip-header">
+                            <span>History</span>
+                            <div class="hist-strip-actions">
+                                <span class="hist-count" id="history-count">0 entries</span>
+                                <button class="hist-clear" onclick="calculator.clearHistory()" title="Clear history">✕</button>
+                            </div>
+                        </div>
+                        <div class="hist-list" id="history-list">
+                            <div class="hist-empty">
+                                <div class="empty-icon">📈</div>
+                                <p>No calculations yet</p>
+                                <p class="empty-sub">Results appear here</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="sidebar-block constants-block">
-                    <h3 class="block-title">Constants</h3>
-                    <div class="constants-list">
-                        <button class="const-btn" onclick="calculator.appendToDisplay('pi')">π = 3.14159…</button>
-                        <button class="const-btn" onclick="calculator.appendToDisplay('e')">e = 2.71828…</button>
-                        <button class="const-btn" onclick="calculator.appendToDisplay('sqrt(2)')">√2 = 1.41421…</button>
-                        <button class="const-btn" onclick="calculator.appendToDisplay('1.6180339887')">φ = 1.61803…</button>
+                <!-- Equations -->
+                <div class="calc-panel" id="equations-mode">
+                    <div class="solver-area">
+                        <div class="solver-hint">
+                            <strong>Equation Solver</strong> — e.g. <code>x^2 + 5x + 6 = 0</code> or <code>2x + 5 = 13</code>
+                        </div>
+                        <div class="complex-toggle">
+                            <span class="toggle-label">When Δ &lt; 0:</span>
+                            <div class="toggle-pills">
+                                <button class="pill active" id="pill-real" onclick="calculator.setComplexMode(false)">Real only</button>
+                                <button class="pill" id="pill-complex" onclick="calculator.setComplexMode(true)">Include i</button>
+                            </div>
+                        </div>
+                        <input type="text" class="solver-input" id="equations-input" placeholder="x^2 + 5x + 6 = 0">
+                        <button class="panel-solve-btn" onclick="calculator.solveUnified()">⚡ Solve</button>
+                        <div class="solution-display" id="equations-solution"></div>
                     </div>
                 </div>
 
-                <div class="sidebar-block hints-block">
-                    <h3 class="block-title">Keyboard Shortcuts</h3>
-                    <div class="hint-row"><kbd>0–9</kbd><span>Numbers</span></div>
-                    <div class="hint-row"><kbd>+ - * /</kbd><span>Operators</span></div>
-                    <div class="hint-row"><kbd>Enter</kbd><span>Calculate</span></div>
-                    <div class="hint-row"><kbd>Esc</kbd><span>Clear</span></div>
-                    <div class="hint-row"><kbd>Backspace</kbd><span>Delete</span></div>
-                    <div class="hint-row"><kbd>A</kbd><span>Insert ANS</span></div>
-                </div>
-            </aside>
-
-            <!-- Main Calculator -->
-            <main class="calc-main">
-                <div class="calc-container">
-                    <div class="calc-topbar">
-                        <div class="mode-indicator" id="mode-indicator">Standard Calculator</div>
-                        <div class="topbar-actions">
-                            <button class="topbar-btn" id="copy-btn" onclick="calculator.copyResult()">⎘ Copy</button>
+                <!-- Factorise -->
+                <div class="calc-panel" id="factorise-mode">
+                    <div class="solver-area">
+                        <div class="solver-hint">
+                            <strong>Factorise</strong> — e.g. <code>x^2 + 5x + 6</code> or <code>6x^2 + 9x</code>
                         </div>
-                    </div>
-
-                    <div class="calculator-modes">
-
-                        <!-- ── Standard / Basic ── -->
-                        <div class="calculator-mode active" id="basic-mode">
-
-                            <!-- Display -->
-                            <div class="calc-display-area">
-                                <div class="display-prev" id="display-prev"></div>
-                                <math-field id="display" class="display" virtual-keyboard-mode="off"></math-field>
-                                <div class="display-ans" id="display-ans"></div>
-                            </div>
-
-                            <!-- DrFrost-style keyboard: 5-column grid -->
-                            <div class="keyboard-wrap" id="keyboard-wrap">
-
-                                <!-- Row 1: 2nd + trig functions -->
-                                <button class="btn k-shift" id="shift-btn" onclick="calculator.toggleShift()">2nd</button>
-                                <button class="btn k-fn" onclick="calculator.pressFunction('sin')">
-                                    <span class="fn-n">sin</span><span class="fn-s">sin⁻¹</span>
-                                </button>
-                                <button class="btn k-fn" onclick="calculator.pressFunction('cos')">
-                                    <span class="fn-n">cos</span><span class="fn-s">cos⁻¹</span>
-                                </button>
-                                <button class="btn k-fn" onclick="calculator.pressFunction('tan')">
-                                    <span class="fn-n">tan</span><span class="fn-s">tan⁻¹</span>
-                                </button>
-                                <button class="btn k-fn" onclick="calculator.pressFunction('log')">
-                                    <span class="fn-n">log</span><span class="fn-s">10ˣ</span>
-                                </button>
-
-                                <!-- Row 2: More functions -->
-                                <button class="btn k-fn" onclick="calculator.pressFunction('sqrt')">
-                                    <span class="fn-n">√x</span><span class="fn-s">x²</span>
-                                </button>
-                                <button class="btn k-fn" onclick="calculator.insertPower()">xⁿ</button>
-                                <button class="btn k-fn" onclick="calculator.pressFunction('ln')">
-                                    <span class="fn-n">ln</span><span class="fn-s">eˣ</span>
-                                </button>
-                                <button class="btn k-fn k-frac-btn" onclick="calculator.insertFraction()" title="Fraction">
-                                    <span class="k-frac-icon"><span class="k-frac-top">a</span><span class="k-frac-bot">b</span></span>
-                                </button>
-                                <button class="btn k-fn" onclick="calculator.insertAbs()">|x|</button>
-
-                                <!-- Row 3: Clear, backspace, brackets, ANS -->
-                                <button class="btn k-ctrl" onclick="calculator.clear()">C</button>
-                                <button class="btn k-ctrl" onclick="calculator.backspace()">⌫</button>
-                                <button class="btn k-ctrl" onclick="calculator.appendToDisplay('(')">(</button>
-                                <button class="btn k-ctrl" onclick="calculator.appendToDisplay(')')">) </button>
-                                <button class="btn k-ans" onclick="calculator.appendAns()">ANS</button>
-
-                                <!-- Row 4 -->
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('7')">7</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('8')">8</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('9')">9</button>
-                                <button class="btn k-op"  onclick="calculator.appendToDisplay('/')">÷</button>
-                                <button class="btn k-fn"  onclick="calculator.appendToDisplay('pi')">π</button>
-
-                                <!-- Row 5 -->
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('4')">4</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('5')">5</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('6')">6</button>
-                                <button class="btn k-op"  onclick="calculator.appendToDisplay('*')">×</button>
-                                <button class="btn k-fn"  onclick="calculator.appendToDisplay('e')">e</button>
-
-                                <!-- Row 6 -->
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('1')">1</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('2')">2</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('3')">3</button>
-                                <button class="btn k-op"  onclick="calculator.appendToDisplay('-')">−</button>
-                                <button class="btn k-fn"  onclick="calculator.toggleSign()">±</button>
-
-                                <!-- Row 7: 0 spans 2 cols, then . + = -->
-                                <button class="btn k-num k-wide" onclick="calculator.appendToDisplay('0')">0</button>
-                                <button class="btn k-num" onclick="calculator.appendToDisplay('.')">.</button>
-                                <button class="btn k-op"  onclick="calculator.appendToDisplay('+')">+</button>
-                                <button class="btn k-eq"  onclick="calculator.calculate()">=</button>
-                            </div>
-                        </div>
-
-                        <!-- ── Unified Equation Solver ── -->
-                        <div class="calculator-mode" id="equations-mode">
-                            <div class="solver-panel">
-                                <div class="solver-header">
-                                    <div class="solver-icon-wrap">x²</div>
-                                    <div>
-                                        <h3>Equation Solver</h3>
-                                        <p>Solve linear and quadratic equations for x</p>
-                                    </div>
-                                </div>
-                                <div class="complex-toggle">
-                                    <span class="toggle-label">When Δ &lt; 0:</span>
-                                    <div class="toggle-pills">
-                                        <button class="pill active" id="pill-real" onclick="calculator.setComplexMode(false)">Real only</button>
-                                        <button class="pill" id="pill-complex" onclick="calculator.setComplexMode(true)">Include i</button>
-                                    </div>
-                                </div>
-                                <div class="input-section">
-                                    <label>Enter equation (e.g., 2x + 5 = 13 or x^2 + 5x + 6 = 0):</label>
-                                    <input type="text" class="equation-input solver-input" id="equations-input" placeholder="x^2 + 5x + 6 = 0">
-                                    <button class="solve-btn" onclick="calculator.solveUnified()">⚡ Solve</button>
-                                </div>
-                                <div class="math-keyboard">
-                                    <div class="mk-label">Math Keyboard — tap the field above first</div>
-                                    <div class="mk-grid">
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('x')">x</button>
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('y')">y</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('^')">xⁿ</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('sqrt(')">√</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('(')">(</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput(')')">) </button>
-                                        <button class="mk-btn mk-eq" onclick="calculator.appendToInput('=')">= </button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.backspaceInput()">⌫</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.clearInput()">C</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('7')">7</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('8')">8</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('9')">9</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('-')">−</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('/')">÷</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('pi')">π</button>
-                                        <button class="mk-btn mk-ans" onclick="calculator.appendAnsToInput()">ANS</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('4')">4</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('5')">5</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('6')">6</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('1')">1</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('2')">2</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('3')">3</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('0')">0</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('.')">.</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('e')">e</button>
-                                    </div>
-                                </div>
-                                <div class="solution-display" id="equations-solution"></div>
-                            </div>
-                        </div>
-
-                        <!-- ── Factorise ── -->
-                        <div class="calculator-mode" id="factorise-mode">
-                            <div class="solver-panel">
-                                <div class="solver-header">
-                                    <div class="solver-icon-wrap">ab</div>
-                                    <div>
-                                        <h3>Factorise</h3>
-                                        <p>Factor quadratic and linear expressions over ℚ</p>
-                                    </div>
-                                </div>
-                                <div class="input-section">
-                                    <label>Enter expression (e.g., x^2 + 5x + 6 or 6x^2 + 9x):</label>
-                                    <input type="text" class="equation-input solver-input" id="factorise-input" placeholder="x^2 + 5x + 6">
-                                    <button class="solve-btn" onclick="calculator.factorise()">⚡ Factorise</button>
-                                </div>
-                                <div class="math-keyboard">
-                                    <div class="mk-label">Math Keyboard — tap the field above first</div>
-                                    <div class="mk-grid">
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('x')">x</button>
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('y')">y</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('^')">xⁿ</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('sqrt(')">√</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('(')">(</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput(')')">) </button>
-                                        <button class="mk-btn mk-op" onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.backspaceInput()">⌫</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.clearInput()">C</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('7')">7</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('8')">8</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('9')">9</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('-')">−</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('/')">÷</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('pi')">π</button>
-                                        <button class="mk-btn mk-ans" onclick="calculator.appendAnsToInput()">ANS</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('4')">4</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('5')">5</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('6')">6</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('1')">1</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('2')">2</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('3')">3</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('0')">0</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('.')">.</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('e')">e</button>
-                                    </div>
-                                </div>
-                                <div class="solution-display" id="factorise-solution"></div>
-                            </div>
-                        </div>
-
-                        <!-- ── Expand ── -->
-                        <div class="calculator-mode" id="expand-mode">
-                            <div class="solver-panel">
-                                <div class="solver-header">
-                                    <div class="solver-icon-wrap">⟹</div>
-                                    <div>
-                                        <h3>Expand</h3>
-                                        <p>Expand and simplify algebraic expressions</p>
-                                    </div>
-                                </div>
-                                <div class="input-section">
-                                    <label>Enter expression (e.g., (x + 2)(x + 3) or 3(2x + 1)):</label>
-                                    <input type="text" class="equation-input solver-input" id="expand-input" placeholder="(x + 2)(x + 3)">
-                                    <button class="solve-btn" onclick="calculator.expand()">⚡ Expand</button>
-                                </div>
-                                <div class="math-keyboard">
-                                    <div class="mk-label">Math Keyboard — tap the field above first</div>
-                                    <div class="mk-grid">
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('x')">x</button>
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('y')">y</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('^')">xⁿ</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('sqrt(')">√</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('(')">(</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput(')')">) </button>
-                                        <button class="mk-btn mk-op" onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.backspaceInput()">⌫</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.clearInput()">C</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('7')">7</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('8')">8</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('9')">9</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('-')">−</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('/')">÷</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('pi')">π</button>
-                                        <button class="mk-btn mk-ans" onclick="calculator.appendAnsToInput()">ANS</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('4')">4</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('5')">5</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('6')">6</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('1')">1</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('2')">2</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('3')">3</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('0')">0</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('.')">.</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('e')">e</button>
-                                    </div>
-                                </div>
-                                <div class="solution-display" id="expand-solution"></div>
-                            </div>
-                        </div>
-
-                        <!-- ── Simultaneous Equations ── -->
-                        <div class="calculator-mode" id="simultaneous-mode">
-                            <div class="solver-panel">
-                                <div class="solver-header">
-                                    <div class="solver-icon-wrap">⩵</div>
-                                    <div>
-                                        <h3>Simultaneous Equations</h3>
-                                        <p>Solve 2-variable linear systems using Cramer's Rule</p>
-                                    </div>
-                                </div>
-                                <div class="input-section">
-                                    <label>Enter two equations:</label>
-                                    <input type="text" class="equation-input solver-input" id="sim-eq1" placeholder="2x + 3y = 13">
-                                    <input type="text" class="equation-input solver-input" id="sim-eq2" placeholder="x - y = -1">
-                                    <button class="solve-btn" onclick="calculator.solveSimultaneous()">⚡ Solve System</button>
-                                </div>
-                                <div class="math-keyboard">
-                                    <div class="mk-label">Math Keyboard — tap a field above first</div>
-                                    <div class="mk-grid">
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('x')">x</button>
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('y')">y</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('^')">xⁿ</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('sqrt(')">√</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('(')">(</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput(')')">) </button>
-                                        <button class="mk-btn mk-eq" onclick="calculator.appendToInput('=')">= </button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.backspaceInput()">⌫</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.clearInput()">C</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('7')">7</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('8')">8</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('9')">9</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('-')">−</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('/')">÷</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('pi')">π</button>
-                                        <button class="mk-btn mk-ans" onclick="calculator.appendAnsToInput()">ANS</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('4')">4</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('5')">5</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('6')">6</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('1')">1</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('2')">2</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('3')">3</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('0')">0</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('.')">.</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('e')">e</button>
-                                    </div>
-                                </div>
-                                <div class="solution-display" id="simultaneous-solution"></div>
-                            </div>
-                        </div>
-
-                        <!-- ── Function Evaluator ── -->
-                        <div class="calculator-mode" id="function-mode">
-                            <div class="solver-panel">
-                                <div class="solver-header">
-                                    <div class="solver-icon-wrap">ƒ</div>
-                                    <div>
-                                        <h3>Function Evaluator</h3>
-                                        <p>Evaluate f(x) at a point or solve f(x) = value</p>
-                                    </div>
-                                </div>
-                                <div class="input-section">
-                                    <label>Define f(x):</label>
-                                    <input type="text" class="equation-input solver-input" id="function-def" placeholder="x^2 + 2x + 1">
-                                    <label>Evaluate at x =</label>
-                                    <input type="text" class="equation-input solver-input" id="function-x" placeholder="5">
-                                    <button class="solve-btn" onclick="calculator.evaluateFunction()">⚡ Evaluate f(x)</button>
-                                    <div class="section-divider"></div>
-                                    <label>Solve f(x) = value:</label>
-                                    <input type="text" class="equation-input solver-input" id="function-value" placeholder="0">
-                                    <button class="solve-btn secondary" onclick="calculator.solveFunctionEquation()">⚡ Solve for x</button>
-                                </div>
-                                <div class="math-keyboard">
-                                    <div class="mk-label">Math Keyboard — tap a field above first</div>
-                                    <div class="mk-grid">
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('x')">x</button>
-                                        <button class="mk-btn mk-var" onclick="calculator.appendToInput('y')">y</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('^')">xⁿ</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('sqrt(')">√</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('(')">(</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput(')')">) </button>
-                                        <button class="mk-btn mk-eq" onclick="calculator.appendToInput('=')">= </button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.backspaceInput()">⌫</button>
-                                        <button class="mk-btn mk-ctrl" onclick="calculator.clearInput()">C</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('7')">7</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('8')">8</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('9')">9</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('+')">+</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('-')">−</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('*')">×</button>
-                                        <button class="mk-btn mk-op"  onclick="calculator.appendToInput('/')">÷</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('pi')">π</button>
-                                        <button class="mk-btn mk-ans" onclick="calculator.appendAnsToInput()">ANS</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('4')">4</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('5')">5</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('6')">6</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('1')">1</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('2')">2</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('3')">3</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('0')">0</button>
-                                        <button class="mk-btn mk-num" onclick="calculator.appendToInput('.')">.</button>
-                                        <button class="mk-btn" onclick="calculator.appendToInput('e')">e</button>
-                                    </div>
-                                </div>
-                                <div class="solution-display" id="function-solution"></div>
-                            </div>
-                        </div>
-
+                        <input type="text" class="solver-input" id="factorise-input" placeholder="x^2 + 5x + 6">
+                        <button class="panel-solve-btn" onclick="calculator.factorise()">⚡ Factorise</button>
+                        <div class="solution-display" id="factorise-solution"></div>
                     </div>
                 </div>
-            </main>
 
-            <!-- History Panel -->
-            <aside class="history-aside">
-                <div class="hist-header">
-                    <h3>History</h3>
-                    <div class="hist-actions">
-                        <span class="hist-count" id="history-count">0 entries</span>
-                        <button class="hist-clear" onclick="calculator.clearHistory()" title="Clear">✕</button>
+                <!-- Expand -->
+                <div class="calc-panel" id="expand-mode">
+                    <div class="solver-area">
+                        <div class="solver-hint">
+                            <strong>Expand</strong> — e.g. <code>(x + 2)(x + 3)</code> or <code>3(2x + 1)</code>
+                        </div>
+                        <input type="text" class="solver-input" id="expand-input" placeholder="(x + 2)(x + 3)">
+                        <button class="panel-solve-btn" onclick="calculator.expand()">⚡ Expand</button>
+                        <div class="solution-display" id="expand-solution"></div>
                     </div>
                 </div>
-                <div class="hist-list" id="history-list">
-                    <div class="hist-empty">
-                        <div class="empty-icon">📈</div>
-                        <p>No calculations yet</p>
-                        <p class="empty-sub">Results appear here</p>
+
+                <!-- Simultaneous -->
+                <div class="calc-panel" id="simultaneous-mode">
+                    <div class="solver-area">
+                        <div class="solver-hint">
+                            <strong>Simultaneous Equations</strong> — enter two equations, e.g. <code>2x + 3y = 13</code>
+                        </div>
+                        <input type="text" class="solver-input" id="sim-eq1" placeholder="2x + 3y = 13">
+                        <input type="text" class="solver-input" id="sim-eq2" placeholder="x - y = -1">
+                        <button class="panel-solve-btn" onclick="calculator.solveSimultaneous()">⚡ Solve System</button>
+                        <div class="solution-display" id="simultaneous-solution"></div>
                     </div>
                 </div>
-            </aside>
+
+                <!-- Function -->
+                <div class="calc-panel" id="function-mode">
+                    <div class="solver-area">
+                        <div class="solver-hint">
+                            <strong>Function Evaluator</strong> — define f(x), then evaluate at a point or solve f(x) = value
+                        </div>
+                        <label class="input-label">f(x) =</label>
+                        <input type="text" class="solver-input" id="function-def" placeholder="x^2 + 2x + 1">
+                        <label class="input-label">Evaluate at x =</label>
+                        <input type="text" class="solver-input" id="function-x" placeholder="5">
+                        <button class="panel-solve-btn" onclick="calculator.evaluateFunction()">⚡ Evaluate f(x)</button>
+                        <div class="section-divider"></div>
+                        <label class="input-label">Solve f(x) =</label>
+                        <input type="text" class="solver-input" id="function-value" placeholder="0">
+                        <button class="panel-solve-btn secondary" onclick="calculator.solveFunctionEquation()">⚡ Solve for x</button>
+                        <div class="solution-display" id="function-solution"></div>
+                    </div>
+                </div>
+
+            </div><!-- end .calc-panels -->
+
+            <!-- Unified Keyboard (always visible, works in all modes) -->
+            <div class="keyboard-section">
+                <div class="kb-toolbar">
+                    <div class="angle-toggle">
+                        <button class="angle-btn active" id="deg-btn" onclick="calculator.setAngleMode('deg')">DEG</button>
+                        <button class="angle-btn" id="rad-btn" onclick="calculator.setAngleMode('rad')">RAD</button>
+                    </div>
+                    <div class="kb-mem">
+                        <span class="mem-val" id="memory-display">M: 0</span>
+                        <button class="mbtn" onclick="calculator.memoryClear()">MC</button>
+                        <button class="mbtn" onclick="calculator.memoryRecall()">MR</button>
+                        <button class="mbtn" onclick="calculator.memoryAdd()">M+</button>
+                        <button class="mbtn" onclick="calculator.memorySubtract()">M−</button>
+                    </div>
+                    <div class="tb-actions">
+                        <button class="tb-btn" onclick="calculator.toggleHistory()" title="Toggle history">⏱</button>
+                        <button class="tb-btn" id="copy-btn" onclick="calculator.copyResult()" title="Copy result">⎘</button>
+                    </div>
+                </div>
+
+                <div class="keyboard-wrap" id="keyboard-wrap">
+                    <!-- Row 1: 2nd + trig functions -->
+                    <button class="btn k-shift" id="shift-btn" onclick="calculator.toggleShift()">2nd</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sin')">
+                        <span class="fn-n">sin</span><span class="fn-s">sin⁻¹</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('cos')">
+                        <span class="fn-n">cos</span><span class="fn-s">cos⁻¹</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('tan')">
+                        <span class="fn-n">tan</span><span class="fn-s">tan⁻¹</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('log')">
+                        <span class="fn-n">log</span><span class="fn-s">10ˣ</span>
+                    </button>
+
+                    <!-- Row 2: More functions -->
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sqrt')">
+                        <span class="fn-n">√x</span><span class="fn-s">x²</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.insertPowerUnified()">xⁿ</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('ln')">
+                        <span class="fn-n">ln</span><span class="fn-s">eˣ</span>
+                    </button>
+                    <button class="btn k-fn k-frac-btn" onclick="calculator.insertFractionUnified()" title="Fraction">
+                        <span class="k-frac-icon"><span class="k-frac-top">a</span><span class="k-frac-bot">b</span></span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.insertAbsUnified()">|x|</button>
+
+                    <!-- Row 3: C ⌫ ( ) ANS -->
+                    <button class="btn k-ctrl" onclick="calculator.doClear()">C</button>
+                    <button class="btn k-ctrl" onclick="calculator.doBackspace()">⌫</button>
+                    <button class="btn k-ctrl" onclick="calculator.keyPress('(')">(</button>
+                    <button class="btn k-ctrl" onclick="calculator.keyPress(')')">)</button>
+                    <button class="btn k-ans" onclick="calculator.doAns()">ANS</button>
+
+                    <!-- Row 4: 7 8 9 ÷ [π/x] -->
+                    <button class="btn k-num" onclick="calculator.keyPress('7')">7</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('8')">8</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('9')">9</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('/')">÷</button>
+                    <button class="btn k-fn k-ctx" onclick="calculator.contextPress('pi', 'x')">
+                        <span class="ctx-c">π</span><span class="ctx-a">x</span>
+                    </button>
+
+                    <!-- Row 5: 4 5 6 × [e/y] -->
+                    <button class="btn k-num" onclick="calculator.keyPress('4')">4</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('5')">5</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('6')">6</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('*')">×</button>
+                    <button class="btn k-fn k-ctx" onclick="calculator.contextPress('e', 'y')">
+                        <span class="ctx-c">e</span><span class="ctx-a">y</span>
+                    </button>
+
+                    <!-- Row 6: 1 2 3 − [±/=] -->
+                    <button class="btn k-num" onclick="calculator.keyPress('1')">1</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('2')">2</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('3')">3</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('-')">−</button>
+                    <button class="btn k-fn k-ctx" onclick="calculator.contextSignOrEquals()">
+                        <span class="ctx-c">±</span><span class="ctx-a">=</span>
+                    </button>
+
+                    <!-- Row 7: 0 (wide) . + = -->
+                    <button class="btn k-num k-wide" onclick="calculator.keyPress('0')">0</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('.')">.</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('+')">+</button>
+                    <button class="btn k-eq"  onclick="calculator.execute()">
+                        <span class="ctx-c">=</span><span class="ctx-a">Solve ⚡</span>
+                    </button>
+                </div>
+            </div>
 
         </div>
     </section>
@@ -556,31 +294,31 @@
                     <ul class="feat-list">
                         <li>sin, cos, tan + inverses</li>
                         <li>log (base-10), ln, 10ˣ, eˣ</li>
-                        <li>√x, xⁿ, |x|, n!</li>
+                        <li>√x, xⁿ, |x|</li>
                         <li>π and e constants</li>
                     </ul>
                 </div>
                 <div class="feat-card featured">
                     <div class="feat-ribbon">Most Used</div>
-                    <div class="feat-icon">x</div>
+                    <div class="feat-icon">x²</div>
                     <h3>Equation Solver</h3>
-                    <p>Solve linear and non-linear equations with Newton-Raphson numerical methods.</p>
+                    <p>Solve linear and quadratic equations with optional complex roots.</p>
                     <ul class="feat-list">
                         <li>Linear equations</li>
-                        <li>Non-linear equations</li>
-                        <li>Multiple solutions</li>
+                        <li>Quadratic formula</li>
+                        <li>Complex root toggle</li>
                         <li>Step-by-step shown</li>
                     </ul>
                 </div>
                 <div class="feat-card">
-                    <div class="feat-icon">²</div>
-                    <h3>Quadratic Solver</h3>
-                    <p>Complete quadratic analysis with discriminant, real roots, and complex solutions.</p>
+                    <div class="feat-icon">ab</div>
+                    <h3>Factorise</h3>
+                    <p>Factor quadratic and linear expressions over ℚ with step-by-step working.</p>
                     <ul class="feat-list">
-                        <li>Real &amp; complex roots</li>
-                        <li>Discriminant analysis</li>
-                        <li>Repeated root detection</li>
-                        <li>Vertex calculation</li>
+                        <li>Quadratic factorisation</li>
+                        <li>Common factor extraction</li>
+                        <li>Rational roots only</li>
+                        <li>Discriminant check</li>
                     </ul>
                 </div>
                 <div class="feat-card">
@@ -607,12 +345,12 @@
                 </div>
                 <div class="feat-card">
                     <div class="feat-icon">⌨</div>
-                    <h3>DrFrost-style Keyboard</h3>
-                    <p>Full on-screen button keyboard — no typing needed. ANS recalls last result instantly.</p>
+                    <h3>Visual Keyboard</h3>
+                    <p>One shared DrFrost-style keyboard works across all modes. Visual math display with MathLive.</p>
                     <ul class="feat-list">
+                        <li>Visual fractions &amp; exponents</li>
                         <li>2nd shift for inverses</li>
                         <li>ANS key for chaining</li>
-                        <li>Math keyboard in all modes</li>
                         <li>Physical keys still work</li>
                     </ul>
                 </div>
@@ -632,10 +370,10 @@
                     <div class="tech-tags">
                         <span class="tech-tag">JavaScript</span>
                         <span class="tech-tag">Math.js v11</span>
+                        <span class="tech-tag">MathLive</span>
                         <span class="tech-tag">Newton-Raphson</span>
                         <span class="tech-tag">Cramer's Rule</span>
                         <span class="tech-tag">Quadratic Formula</span>
-                        <span class="tech-tag">Numerical Methods</span>
                     </div>
                 </div>
                 <div class="about-formulas">
@@ -677,7 +415,7 @@
                     <div class="footer-col">
                         <h4>Features</h4>
                         <a href="#">Step-by-step Solutions</a>
-                        <a href="#">DrFrost Keyboard</a>
+                        <a href="#">Visual Math Display</a>
                         <a href="#">Calculation History</a>
                         <a href="#">Memory Functions</a>
                         <a href="#">Dark Mode</a>

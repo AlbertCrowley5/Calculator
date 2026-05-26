@@ -9,7 +9,7 @@ class Calculator {
         this.calcHistory   = [];
         this.memoryValue   = 0;
         this.angleMode     = 'deg';
-        this.initializeModeSwitching();
+        this.currentMode   = 'basic';
         this.initializeTheme();
         this.setupSolverInputTracking();
     }
@@ -28,28 +28,19 @@ class Calculator {
     }
 
     // ── Mode switching ───────────────────────────────────────
-    initializeModeSwitching() {
-        document.querySelectorAll('.mode-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.switchMode(btn.getAttribute('data-mode'), btn);
-            });
-        });
-    }
-
     switchMode(mode, clickedBtn) {
-        document.querySelectorAll('.mode-item').forEach(b => b.classList.remove('active'));
+        this.currentMode = mode;
+
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
         if (clickedBtn) clickedBtn.classList.add('active');
-        document.querySelectorAll('.calculator-mode').forEach(m => m.classList.remove('active'));
+
+        document.querySelectorAll('.calc-panel').forEach(m => m.classList.remove('active'));
         const modeEl = document.getElementById(`${mode}-mode`);
         if (modeEl) modeEl.classList.add('active');
 
-        const names = {
-            basic: 'Standard Calculator', equations: 'Equation Solver',
-            factorise: 'Factorise', expand: 'Expand',
-            simultaneous: 'Simultaneous Equations', function: 'Function Evaluator'
-        };
-        const indicator = document.getElementById('mode-indicator');
-        if (indicator) indicator.textContent = names[mode] || mode;
+        // Toggle context-button labels: algebra modes show x/y/= instead of π/e/±
+        document.getElementById('calc-app')?.classList.toggle('algebra-mode', mode !== 'basic');
+
         this.clearSolutions();
 
         if (mode !== 'basic') {
@@ -75,10 +66,22 @@ class Calculator {
         });
     }
 
+    // ── Mode helpers ─────────────────────────────────────────
+    getCurrentModeInput() {
+        const map = {
+            equations:    'equations-input',
+            factorise:    'factorise-input',
+            expand:       'expand-input',
+            simultaneous: 'sim-eq1',
+            function:     'function-def',
+        };
+        const id = map[this.currentMode];
+        return id ? document.getElementById(id) : null;
+    }
+
     // ── Display helpers ──────────────────────────────────────
     getDisplayInput() { return document.getElementById('display'); }
 
-    // Convert MathLive ascii-math output to math.js-evaluable expression
     getExpressionForEval(asciiMath) {
         return asciiMath
             .replace(/arcsin/g, 'asin')
@@ -87,6 +90,134 @@ class Calculator {
             .replace(/\bln\b/g, 'log')
             .replace(/log_\(?\s*10\s*\)?/g, 'log10')
             .replace(/\bxx\b/g, '*');
+    }
+
+    // ── Universal keyboard routing ───────────────────────────
+
+    keyPress(value) {
+        if (this.currentMode === 'basic') {
+            this.appendToDisplay(value);
+        } else {
+            this.appendToSolverInput(value);
+        }
+    }
+
+    doBackspace() {
+        if (this.currentMode === 'basic') {
+            this.backspace();
+        } else {
+            this.backspaceInput();
+        }
+    }
+
+    doClear() {
+        if (this.currentMode === 'basic') {
+            this.clear();
+        } else {
+            this.clearInput();
+            const modeEl = document.getElementById(`${this.currentMode}-mode`);
+            const sol = modeEl?.querySelector('.solution-display');
+            if (sol) { sol.classList.remove('show'); sol.innerHTML = ''; }
+        }
+    }
+
+    doAns() {
+        if (this.currentMode === 'basic') {
+            this.appendAns();
+        } else {
+            this.appendAnsToInput();
+        }
+    }
+
+    execute() {
+        const mode = this.currentMode;
+        if (mode === 'basic')           { this.calculate(); return; }
+        if (mode === 'equations')       { this.solveUnified(); return; }
+        if (mode === 'factorise')       { this.factorise(); return; }
+        if (mode === 'expand')          { this.expand(); return; }
+        if (mode === 'simultaneous')    { this.solveSimultaneous(); return; }
+        if (mode === 'function') {
+            const target = document.getElementById('function-value')?.value.trim();
+            if (target) this.solveFunctionEquation();
+            else this.evaluateFunction();
+        }
+    }
+
+    contextPress(calcValue, algebraValue) {
+        if (this.currentMode === 'basic') {
+            this.appendToDisplay(calcValue);
+        } else {
+            this.appendToSolverInput(algebraValue);
+        }
+    }
+
+    contextSignOrEquals() {
+        if (this.currentMode === 'basic') {
+            this.toggleSign();
+        } else {
+            this.appendToSolverInput('=');
+        }
+    }
+
+    pressFunctionUnified(fn) {
+        if (this.currentMode === 'basic') {
+            this.pressFunction(fn);
+            return;
+        }
+        const s = this.shiftActive;
+        const map = {
+            sin:  s ? 'arcsin(' : 'sin(',
+            cos:  s ? 'arccos(' : 'cos(',
+            tan:  s ? 'arctan(' : 'tan(',
+            log:  s ? '10^('    : 'log(',
+            ln:   s ? 'e^('     : 'ln(',
+            sqrt: s ? '^('      : 'sqrt(',
+        };
+        const text = map[fn];
+        if (!text) return;
+        if (this.shiftActive) this.toggleShift();
+        this.appendToSolverInput(text);
+    }
+
+    insertFractionUnified() {
+        if (this.currentMode === 'basic') {
+            this.insertFraction();
+        } else {
+            // Insert ( which signals fraction intent in plain-text mode
+            this.appendToSolverInput('(');
+        }
+    }
+
+    insertPowerUnified() {
+        if (this.currentMode === 'basic') {
+            this.insertPower();
+        } else {
+            this.appendToSolverInput('^(');
+        }
+    }
+
+    insertAbsUnified() {
+        if (this.currentMode === 'basic') {
+            this.insertAbs();
+        } else {
+            this.appendToSolverInput('abs(');
+        }
+    }
+
+    // Inserts plain text into the currently focused solver input
+    appendToSolverInput(value) {
+        const input = this.activeInput || this.getCurrentModeInput();
+        if (!input) return;
+        if (!this.activeInput) {
+            this.activeInput = input;
+            input.focus();
+        }
+        const start = input.selectionStart ?? input.value.length;
+        const end   = input.selectionEnd   ?? input.value.length;
+        input.value = input.value.slice(0, start) + value + input.value.slice(end);
+        const pos = start + value.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
     }
 
     // ── Core display operations ──────────────────────────────
@@ -269,8 +400,8 @@ class Calculator {
             const prevEl = document.getElementById('display-prev');
             if (prevEl) {
                 const saved = prevEl.textContent;
-                prevEl.textContent = 'Syntax error — check expression';
-                setTimeout(() => { prevEl.textContent = saved; }, 1500);
+                prevEl.textContent = 'Check your expression and try again';
+                setTimeout(() => { prevEl.textContent = saved; }, 2000);
             }
             mf.focus();
         }
@@ -319,11 +450,15 @@ class Calculator {
         if (!val) return;
         navigator.clipboard.writeText(val).then(() => {
             const btn = document.getElementById('copy-btn');
-            if (btn) { const o = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = o, 2000); }
+            if (btn) { const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 2000); }
         }).catch(() => {});
     }
 
     // ── History ───────────────────────────────────────────────
+    toggleHistory() {
+        document.getElementById('history-strip')?.classList.toggle('visible');
+    }
+
     addToCalcHistory(latexExpr, asciiExpr, result) {
         this.calcHistory.unshift({ latex: latexExpr, expression: asciiExpr, result });
         if (this.calcHistory.length > 50) this.calcHistory.pop();
@@ -339,7 +474,7 @@ class Calculator {
         const n = this.calcHistory.length;
         if (count) count.textContent = `${n} ${n === 1 ? 'entry' : 'entries'}`;
         if (n === 0) {
-            list.innerHTML = `<div class="hist-empty"><div class="empty-icon">📈</div><p>No calculations yet</p><p class="empty-sub">Results appear here</p></div>`;
+            list.innerHTML = `<div class="hist-empty"><div class="empty-icon">📈</div><p>No calculations yet</p></div>`;
             return;
         }
         list.innerHTML = this.calcHistory.map((item, i) => `
@@ -367,7 +502,7 @@ class Calculator {
         if (prev) prev.textContent = (item.expression || '') + ' =';
     }
 
-    // ── Solver math keyboard helpers ──────────────────────────
+    // ── Solver input helpers (used by solver panels directly) ─
     appendToInput(value) {
         const input = this.activeInput;
         if (!input) return;
@@ -402,7 +537,7 @@ class Calculator {
         input.value = ''; input.focus();
     }
 
-    // ── Equation Solver (legacy stubs) ────────────────────────
+    // ── Equation Solver stubs ────────────────────────────────
     solveEquation()  { this.solveUnified(); }
     solveQuadratic() { this.solveUnified(); }
 
@@ -424,7 +559,7 @@ class Calculator {
             const det = a1*b2 - a2*b1;
             if (det === 0) throw new Error('System has no unique solution (lines are parallel or coincident)');
             steps.push("Using Cramer's Rule:");
-            steps.push(`D = (${a1})(${b2}) - (${a2})(${b1}) = ${det}`);
+            steps.push(`D = (${a1})(${b2}) − (${a2})(${b1}) = ${det}`);
             const x = (c1*b2 - c2*b1)/det, y = (a1*c2 - a2*c1)/det;
             steps.push(`x = ${x}`); steps.push(`y = ${y}`);
             if (Math.abs(a1*x + b1*y - c1) < 0.0001 && Math.abs(a2*x + b2*y - c2) < 0.0001)
@@ -438,15 +573,13 @@ class Calculator {
         const funcDef = document.getElementById('function-def').value.trim();
         const xValue  = document.getElementById('function-x').value.trim();
         const solutionDiv = document.getElementById('function-solution');
-        if (!funcDef || !xValue) { this.showError(solutionDiv, 'Please enter both function and x value'); return; }
+        if (!funcDef || !xValue) { this.showError(solutionDiv, 'Enter both f(x) and a value for x'); return; }
         try {
             const x = parseFloat(xValue);
             if (isNaN(x)) throw new Error('Invalid x value');
-            const steps = [];
-            steps.push(`Function: f(x) = ${funcDef}`);
-            steps.push(`Evaluate at x = ${x}`);
+            const steps = [`f(x) = ${funcDef}`, `x = ${x}`];
             const result = math.evaluate(funcDef, { x });
-            steps.push(`Result: f(${x}) = ${result}`);
+            steps.push(`f(${x}) = ${result}`);
             this.displaySolution(solutionDiv, [result], steps);
         } catch (error) { this.showError(solutionDiv, error.message); }
     }
@@ -455,13 +588,11 @@ class Calculator {
         const funcDef     = document.getElementById('function-def').value.trim();
         const targetValue = document.getElementById('function-value').value.trim();
         const solutionDiv = document.getElementById('function-solution');
-        if (!funcDef || targetValue === '') { this.showError(solutionDiv, 'Please enter both function and target value'); return; }
+        if (!funcDef || targetValue === '') { this.showError(solutionDiv, 'Enter both f(x) and the target value'); return; }
         try {
             const target = parseFloat(targetValue);
             if (isNaN(target)) throw new Error('Invalid target value');
-            const steps = [];
-            steps.push(`Solve: ${funcDef} = ${target}`);
-            steps.push(`Rearrange: ${funcDef} - ${target} = 0`);
+            const steps = [`Solve: ${funcDef} = ${target}`];
             const expression = `(${funcDef}) - ${target}`;
             const foundSolutions = new Set();
             for (const start of [-100,-10,-1,0,1,10,100]) {
@@ -469,12 +600,8 @@ class Calculator {
                 if (sol !== null && !isNaN(sol)) foundSolutions.add(Math.round(sol * 1e10) / 1e10);
             }
             const solutions = Array.from(foundSolutions);
-            if (solutions.length === 0) throw new Error('No solutions found');
-            steps.push(`Found ${solutions.length} solution(s):`);
-            solutions.forEach((sol, i) => {
-                steps.push(`x${i+1} = ${sol}`);
-                steps.push(`  Verify: f(${sol}) = ${math.evaluate(funcDef, { x: sol })} ≈ ${target}`);
-            });
+            if (solutions.length === 0) throw new Error('No solutions found in the search range');
+            solutions.forEach((sol, i) => steps.push(`x${solutions.length>1?i+1:''} = ${sol}`));
             this.displaySolution(solutionDiv, solutions, steps, 'x');
         } catch (error) { this.showError(solutionDiv, error.message); }
     }
@@ -539,16 +666,16 @@ class Calculator {
 
     displaySolution(solutionDiv, solutions, steps, variable = null) {
         solutionDiv.classList.add('show');
-        let html = '<h3>Solution:</h3>';
+        let html = '<h3>Solution</h3>';
         solutions.forEach((sol, i) => {
             html += variable && typeof sol === 'number'
-                ? `<div class="result">${variable}${solutions.length>1?'₍'+(i+1)+'₎':''} = ${sol}</div>`
+                ? `<div class="result">${variable}${solutions.length>1?'<sub>'+(i+1)+'</sub>':''} = ${sol}</div>`
                 : `<div class="result">${sol}</div>`;
         });
         if (steps?.length) {
-            html += '<div class="steps"><h4>Step-by-step solution:</h4>';
+            html += '<details class="steps-details"><summary>Step-by-step</summary><div class="steps">';
             steps.forEach(step => { html += `<div class="step">${step}</div>`; });
-            html += '</div>';
+            html += '</div></details>';
         }
         solutionDiv.innerHTML = html;
     }
@@ -556,18 +683,18 @@ class Calculator {
     showError(solutionDiv, message) {
         if (!solutionDiv) return;
         solutionDiv.classList.add('show', 'error');
-        solutionDiv.innerHTML = `<h3>Error:</h3><div class="result">${message}</div>`;
+        solutionDiv.innerHTML = `<h3>Oops!</h3><div class="result error-msg">${message}</div>`;
         setTimeout(() => solutionDiv.classList.remove('error'), 3000);
     }
 
-    // ── Complex mode toggle ──────────────────────────────────────
+    // ── Complex mode ─────────────────────────────────────────
     setComplexMode(showComplex) {
         this.showComplex = showComplex;
         document.getElementById('pill-real')?.classList.toggle('active', !showComplex);
         document.getElementById('pill-complex')?.classList.toggle('active', showComplex);
     }
 
-    // ── Unified Equation Solver ──────────────────────────────────
+    // ── Unified Equation Solver ──────────────────────────────
     solveUnified() {
         const input = document.getElementById('equations-input').value.trim();
         const solutionDiv = document.getElementById('equations-solution');
@@ -581,8 +708,7 @@ class Calculator {
             const vars = this.findVariables(expr);
             if (vars.length === 0) throw new Error('No variable found in equation');
             const v = vars[0];
-            const steps = [];
-            steps.push(`Equation: ${left} = ${right}`);
+            const steps = [`Equation: ${left} = ${right}`];
 
             if (/[a-z]\^2|\*\*2/i.test(expr)) {
                 try {
@@ -625,35 +751,33 @@ class Calculator {
         const steps = [];
         const aStr = a === 1 ? '' : a === -1 ? '-' : String(a);
         const bAbs = Math.abs(b), cAbs = Math.abs(c);
-        steps.push(`Quadratic: ${aStr}x² ${b >= 0 ? '+' : '−'} ${bAbs}x ${c >= 0 ? '+' : '−'} ${cAbs} = 0`);
-        steps.push('Formula: x = (−b ± √(b² − 4ac)) / 2a');
+        steps.push(`${aStr}x² ${b >= 0 ? '+' : '−'} ${bAbs}x ${c >= 0 ? '+' : '−'} ${cAbs} = 0`);
+        steps.push('Using quadratic formula: x = (−b ± √(b²−4ac)) / 2a');
         const disc = b * b - 4 * a * c;
-        const h = -b / (2 * a), k = a * h * h + b * h + c;
-        steps.push(`Discriminant: Δ = ${this.fmtNum(disc)}`);
-        steps.push(`Vertex: (${this.fmtNum(h)}, ${this.fmtNum(k)})`);
+        steps.push(`Discriminant Δ = ${this.fmtNum(disc)}`);
 
         if (disc > 1e-12) {
-            steps.push('Δ > 0: Two distinct real solutions');
+            steps.push('Δ > 0 → two real solutions');
             const x1 = (-b + Math.sqrt(disc)) / (2 * a);
             const x2 = (-b - Math.sqrt(disc)) / (2 * a);
             steps.push(`x₁ = ${this.fmtNum(x1)}`);
             steps.push(`x₂ = ${this.fmtNum(x2)}`);
             this.displaySolution(solutionDiv, [x1, x2], steps, 'x');
         } else if (Math.abs(disc) <= 1e-12) {
-            steps.push('Δ = 0: One repeated solution');
+            steps.push('Δ = 0 → one repeated solution');
             const x = -b / (2 * a);
             steps.push(`x = ${this.fmtNum(x)}`);
             this.displaySolution(solutionDiv, [x], steps, 'x');
         } else {
             const r = -b / (2 * a), im = Math.sqrt(-disc) / (2 * a);
             if (this.showComplex) {
-                steps.push('Δ < 0: Two complex solutions');
+                steps.push('Δ < 0 → two complex solutions');
                 const s1 = `${this.fmtNum(r)} + ${this.fmtNum(im)}i`;
                 const s2 = `${this.fmtNum(r)} − ${this.fmtNum(im)}i`;
                 steps.push(`x₁ = ${s1}`); steps.push(`x₂ = ${s2}`);
                 this.displaySolution(solutionDiv, [s1, s2], steps);
             } else {
-                steps.push('Δ < 0: No real solutions');
+                steps.push('Δ < 0 → no real solutions');
                 this.displayNoSolution(solutionDiv, steps);
             }
         }
@@ -665,22 +789,21 @@ class Calculator {
         solutionDiv.classList.add('show');
         let html = '<div class="no-solution">No real solutions</div>';
         if (steps?.length) {
-            html += '<div class="steps"><h4>Step-by-step:</h4>';
+            html += '<details class="steps-details"><summary>Step-by-step</summary><div class="steps">';
             steps.forEach(s => { html += `<div class="step">${s}</div>`; });
-            html += '</div>';
+            html += '</div></details>';
         }
         solutionDiv.innerHTML = html;
     }
 
-    // ── Factorise ────────────────────────────────────────────────
+    // ── Factorise ────────────────────────────────────────────
     factorise() {
         const input = document.getElementById('factorise-input').value.trim();
         const sol   = document.getElementById('factorise-solution');
         if (!input) { this.showError(sol, 'Please enter an expression'); return; }
         try {
-            if (!/x/i.test(input)) throw new Error('No variable found — enter an expression in x');
-            const steps = [];
-            steps.push(`Expression: ${input}`);
+            if (!/x/i.test(input)) throw new Error('Enter a polynomial with the variable x');
+            const steps = [`Expression: ${input}`];
             let { a, b, c } = this.parsePolynomial(input.replace(/\s/g, ''), 'x');
             a = Math.round(a * 1e9) / 1e9;
             b = Math.round(b * 1e9) / 1e9;
@@ -701,7 +824,7 @@ class Calculator {
                 return;
             }
 
-            steps.push(`Form: ${a}x² + ${b}x + ${c}`);
+            steps.push(`Quadratic: ${a}x² + ${b}x + ${c}`);
 
             if (Math.abs(c) < 1e-9) {
                 const ia = Math.round(a), ib = Math.round(b);
@@ -728,7 +851,7 @@ class Calculator {
             if (factored === null) {
                 const disc = rb * rb - 4 * ra * rc;
                 steps.push(`Δ = ${this.fmtNum(disc)} — not a perfect square`);
-                this.displaySolution(sol, [`Cannot factorise over ℚ (Δ = ${this.fmtNum(disc)})`], steps);
+                this.displaySolution(sol, [`Cannot factorise over ℚ`], steps);
                 return;
             }
             const result = `${prefix}${factored}`;
@@ -737,12 +860,7 @@ class Calculator {
         } catch (e) { this.showError(document.getElementById('factorise-solution'), e.message); }
     }
 
-    gcd(a, b) {
-        a = Math.abs(a); b = Math.abs(b);
-        while (b) { [a, b] = [b, a % b]; }
-        return a || 1;
-    }
-
+    gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
     gcd3(a, b, c) { return this.gcd(this.gcd(a, b), c); }
 
     reduceFrac(num, den) {
@@ -758,10 +876,8 @@ class Calculator {
         const sqrtD = Math.sqrt(disc);
         if (Math.abs(sqrtD - Math.round(sqrtD)) > 1e-6) return null;
         const isd = Math.round(sqrtD);
-
         const f1 = this.reduceFrac(-b + isd, 2 * a);
         const f2 = this.reduceFrac(-b - isd, 2 * a);
-
         const fmtBracket = ({ p, q }) => {
             if (q < 0) { p = -p; q = -q; }
             const xPart = q === 1 ? 'x' : `${q}x`;
@@ -769,18 +885,16 @@ class Calculator {
             const sign = p <= 0 ? `+ ${-p}` : `− ${p}`;
             return `(${xPart} ${sign})`;
         };
-
         return isd === 0 ? `${fmtBracket(f1)}²` : `${fmtBracket(f1)}${fmtBracket(f2)}`;
     }
 
-    // ── Expand ───────────────────────────────────────────────────
+    // ── Expand ───────────────────────────────────────────────
     expand() {
         const input = document.getElementById('expand-input').value.trim();
         const sol   = document.getElementById('expand-solution');
         if (!input) { this.showError(sol, 'Please enter an expression'); return; }
         try {
-            const steps = [];
-            steps.push(`Expression: ${input}`);
+            const steps = [`Expression: ${input}`];
             const expanded = math.simplify(input).toString();
             const formatted = this.formatExpanded(expanded);
             steps.push(`Expanded: ${formatted}`);
@@ -789,14 +903,9 @@ class Calculator {
     }
 
     formatExpanded(str) {
-        return str
-            .replace(/\s*\*\*\s*/g, '^')
-            .replace(/\s*\^\s*/g, '^')
-            .replace(/\s*\*\s*/g, '')
-            .replace(/\bx\^2\b/g, 'x²')
-            .replace(/\bx\^3\b/g, 'x³')
-            .replace(/\^1\b/g, '')
-            .trim();
+        return str.replace(/\s*\*\*\s*/g, '^').replace(/\s*\^\s*/g, '^')
+                  .replace(/\s*\*\s*/g, '').replace(/\bx\^2\b/g, 'x²')
+                  .replace(/\bx\^3\b/g, 'x³').replace(/\^1\b/g, '').trim();
     }
 }
 
@@ -804,13 +913,12 @@ class Calculator {
 const calculator = new Calculator();
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Wait for MathLive custom element to be registered
     await customElements.whenDefined('math-field');
 
     const display = document.getElementById('display');
 
     if (display) {
-        display.smartFence   = false;
+        display.smartFence = false;
         display.virtualKeyboardMode = 'off';
 
         display.addEventListener('keydown', e => {
@@ -829,7 +937,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         display.focus();
     }
 
+    // Wire up mode tabs
+    document.querySelectorAll('.mode-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            calculator.switchMode(btn.getAttribute('data-mode'), btn);
+        });
+    });
+
+    // Physical keyboard redirect to display (calculator mode only)
     document.addEventListener('keydown', e => {
+        if (calculator.currentMode !== 'basic') return;
         if (document.activeElement.classList.contains('solver-input')) return;
         if (document.activeElement !== display && display) {
             if (/^[0-9+\-*/.^()e]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -840,16 +957,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Solver input Enter key → execute
     document.querySelectorAll('.solver-input').forEach(input => {
         input.addEventListener('keydown', e => {
             if (e.key !== 'Enter') return;
             e.preventDefault();
-            const mode = input.closest('.calculator-mode').id;
-            if (mode === 'equations-mode')         calculator.solveUnified();
-            else if (mode === 'factorise-mode')    calculator.factorise();
-            else if (mode === 'expand-mode')       calculator.expand();
-            else if (mode === 'simultaneous-mode') calculator.solveSimultaneous();
-            else if (mode === 'function-mode')     calculator.evaluateFunction();
+            calculator.execute();
         });
     });
 });
