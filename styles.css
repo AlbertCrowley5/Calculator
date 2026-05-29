@@ -982,3 +982,14 @@ input  { font-family: inherit; }
     .toolbar-label { display: none; }
     .mode-tab { padding: 12px 11px; font-size: 0.77em; }
 }
+
+/* ============================================================
+   SUPPRESS MATHLIVE VIRTUAL KEYBOARD — we use our own
+   ============================================================ */
+.ML__keyboard,
+.ML__keyboard-backdrop,
+math-virtual-keyboard {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

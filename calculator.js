@@ -917,8 +917,18 @@ class Calculator {
 // ── Init ──────────────────────────────────────────────────────
 const calculator = new Calculator();
 
+// Globally suppress MathLive virtual keyboard before it can mount
+window.addEventListener('math-virtual-keyboard-open', e => { e.preventDefault(); }, true);
+if (window.mathVirtualKeyboard) window.mathVirtualKeyboard.visible = false;
+
 document.addEventListener('DOMContentLoaded', async () => {
     await customElements.whenDefined('math-field');
+
+    // Kill MathLive virtual keyboard globally via its public API
+    if (window.mathVirtualKeyboard) {
+        window.mathVirtualKeyboard.visible = false;
+        window.mathVirtualKeyboard.hide?.();
+    }
 
     const display = document.getElementById('display');
 
