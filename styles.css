@@ -984,6 +984,58 @@ input  { font-family: inherit; }
 }
 
 /* ============================================================
+   SIMPLE / ADVANCED UI MODE TOGGLE
+   ============================================================ */
+.ui-mode-toggle {
+    display: flex;
+    padding: 10px 12px 0;
+    gap: 6px;
+}
+.ui-pill {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: var(--r);
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 0.875em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background var(--tr), color var(--tr), border-color var(--tr), box-shadow var(--tr);
+}
+.ui-pill:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.ui-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(99,102,241,0.35);
+}
+
+/* ── Visibility rules ──────────────────────────────────────── */
+
+/* Simple mode (default): hide advanced-only chrome */
+.calc-app[data-ui="simple"] .mode-tabs            { display: none; }
+.calc-app[data-ui="simple"] #keyboard-wrap         { display: none; }
+.calc-app[data-ui="simple"] #keyboard-simple       { display: grid; }
+
+/* Advanced mode: restore mode tabs and advanced keyboard, hide simple keyboard */
+.calc-app[data-ui="advanced"] .mode-tabs           { display: flex; }
+.calc-app[data-ui="advanced"] #keyboard-wrap       { display: grid; }
+.calc-app[data-ui="advanced"] #keyboard-simple     { display: none; }
+
+/* Simple keyboard grid — mirrors #keyboard-wrap layout */
+#keyboard-simple {
+    display: none; /* default; overridden by data-ui rules above */
+    grid-template-columns: repeat(5, 1fr);
+    gap: clamp(4px, 1.2vw, 6px);
+    padding: clamp(6px, 2vw, 10px);
+}
+
+/* ============================================================
    SUPPRESS MATHLIVE VIRTUAL KEYBOARD — we use our own
    ============================================================ */
 .ML__keyboard,

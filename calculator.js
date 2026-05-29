@@ -204,6 +204,25 @@ class Calculator {
         }
     }
 
+    squareUnified() {
+        const display = this.getDisplayInput();
+        if (display) display.executeCommand?.(['insert', '^{2}']);
+    }
+
+    // ── UI Mode (Simple / Advanced) ───────────────────────────
+    setUIMode(mode) {
+        const app = document.getElementById('calc-app');
+        if (!app) return;
+        app.setAttribute('data-ui', mode);
+        document.getElementById('pill-simple')  ?.classList.toggle('active', mode === 'simple');
+        document.getElementById('pill-advanced')?.classList.toggle('active', mode === 'advanced');
+        if (mode === 'simple') {
+            if (this.shiftActive) this.toggleShift();
+            this.switchMode('basic', document.querySelector('[data-mode="basic"]'));
+        }
+        try { localStorage.setItem('mathics-ui-mode', mode); } catch {}
+    }
+
     // Inserts plain text into the currently focused solver input
     appendToSolverInput(value) {
         const input = this.activeInput || this.getCurrentModeInput();
@@ -958,6 +977,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         display.focus();
     }
+
+    // Restore persisted UI mode (default: simple)
+    const savedMode = (() => { try { return localStorage.getItem('mathics-ui-mode'); } catch { return null; } })();
+    calculator.setUIMode(savedMode === 'advanced' ? 'advanced' : 'simple');
 
     // Wire up mode tabs
     document.querySelectorAll('.mode-tab').forEach(btn => {

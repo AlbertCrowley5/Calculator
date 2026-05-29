@@ -65,9 +65,23 @@
 
     <!-- Calculator Section -->
     <section class="calc-section" id="calculator">
-        <div class="calc-app" id="calc-app">
+        <div class="calc-app" id="calc-app" data-ui="simple">
 
-            <!-- Mode Tabs -->
+            <!-- Simple / Advanced Toggle -->
+            <div class="ui-mode-toggle">
+                <button class="ui-pill active" id="pill-simple"
+                    onclick="calculator.setUIMode('simple')"
+                    title="Standard calculator — perfect for everyday use and GCSE level">
+                    Simple
+                </button>
+                <button class="ui-pill" id="pill-advanced"
+                    onclick="calculator.setUIMode('advanced')"
+                    title="Full suite — equation solver, factorising, simultaneous equations and more">
+                    Advanced
+                </button>
+            </div>
+
+            <!-- Mode Tabs (Advanced only) -->
             <nav class="mode-tabs">
                 <button class="mode-tab active" data-mode="basic">Calculator</button>
                 <button class="mode-tab" data-mode="equations">Equations</button>
@@ -255,7 +269,66 @@
                     </div>
                 </div>
 
-                <!-- Keyboard Grid -->
+                <!-- Simple Keyboard (GCSE level) -->
+                <div class="keyboard-simple" id="keyboard-simple">
+
+                    <!-- Row 1: Trig + roots -->
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sin')"
+                        title="Sine — used in right-angled triangles">sin</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('cos')"
+                        title="Cosine — used in right-angled triangles">cos</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('tan')"
+                        title="Tangent — used in right-angled triangles">tan</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sqrt')"
+                        title="Square root — e.g. √25 = 5">√x</button>
+                    <button class="btn k-fn" onclick="calculator.squareUnified()"
+                        title="Square — multiply a number by itself, e.g. 5² = 25">x²</button>
+
+                    <!-- Row 2: Constants + control -->
+                    <button class="btn k-fn" onclick="calculator.keyPress('pi')"
+                        title="Pi — π ≈ 3.14159 (used in circles and trig)">π</button>
+                    <button class="btn k-ans" onclick="calculator.doAns()"
+                        title="Use the previous answer in your next calculation">ANS</button>
+                    <button class="btn k-ctrl" onclick="calculator.doClear()"
+                        title="Clear everything and start again">C</button>
+                    <button class="btn k-ctrl" onclick="calculator.keyPress('(')"
+                        title="Open bracket">(</button>
+                    <button class="btn k-ctrl" onclick="calculator.keyPress(')')"
+                        title="Close bracket">)</button>
+
+                    <!-- Row 3: 7 8 9 ÷ ⌫ -->
+                    <button class="btn k-num" onclick="calculator.keyPress('7')">7</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('8')">8</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('9')">9</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('/')" title="Divide">÷</button>
+                    <button class="btn k-ctrl" onclick="calculator.doBackspace()"
+                        title="Delete the last character">⌫</button>
+
+                    <!-- Row 4: 4 5 6 × xⁿ -->
+                    <button class="btn k-num" onclick="calculator.keyPress('4')">4</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('5')">5</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('6')">6</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('*')" title="Multiply">×</button>
+                    <button class="btn k-fn"  onclick="calculator.insertPowerUnified()"
+                        title="Raise to any power — e.g. 2³ or x⁴">xⁿ</button>
+
+                    <!-- Row 5: 1 2 3 − ± -->
+                    <button class="btn k-num" onclick="calculator.keyPress('1')">1</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('2')">2</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('3')">3</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('-')" title="Subtract">−</button>
+                    <button class="btn k-fn"  onclick="calculator.contextSignOrEquals()"
+                        title="Toggle positive / negative">±</button>
+
+                    <!-- Row 6: 0 . + = -->
+                    <button class="btn k-num k-wide" onclick="calculator.keyPress('0')">0</button>
+                    <button class="btn k-num" onclick="calculator.keyPress('.')" title="Decimal point">.</button>
+                    <button class="btn k-op"  onclick="calculator.keyPress('+')" title="Add">+</button>
+                    <button class="btn k-eq"  onclick="calculator.execute()">=</button>
+
+                </div>
+
+                <!-- Advanced Keyboard Grid -->
                 <div class="keyboard-wrap" id="keyboard-wrap">
 
                     <!-- Row 1: Shift + trig functions -->
