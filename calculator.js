@@ -1139,6 +1139,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (display) {
             display.smartFence = false;
             display.virtualKeyboardMode = 'off';
+
+            // Pierce the shadow DOM to force our selection colours
+            const injectShadowStyles = () => {
+                const sr = display.shadowRoot;
+                if (!sr) return;
+                if (sr.querySelector('#mathics-sel-override')) return;
+                const s = document.createElement('style');
+                s.id = 'mathics-sel-override';
+                s.textContent = `
+                    .ML__selected { background: rgba(99,102,241,0.5) !important; border-radius: 2px; }
+                    .ML__selected * { background: transparent !important; }
+                    ::selection { background: rgba(99,102,241,0.5) !important; color: inherit !important; }
+                `;
+                sr.appendChild(s);
+            };
+            injectShadowStyles();
+            setTimeout(injectShadowStyles, 500);
+
             const suppressNativeKb = () => {
                 const ta = display.shadowRoot?.querySelector('textarea');
                 if (ta) ta.setAttribute('inputmode', 'none');

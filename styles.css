@@ -768,9 +768,10 @@ input  { font-family: inherit; }
     outline: none; border: none !important;
     box-shadow: none !important;
     --primary-color: var(--accent);
-    --highlight-background-color: rgba(129,140,248,0.25);
+    --highlight-background-color: rgba(99,102,241,0.5);
+    --highlight-text-color: #ffffff;
     --caret-color: var(--accent);
-    --selection-background-color-focused: rgba(129,140,248,0.35);
+    --selection-background-color-focused: rgba(99,102,241,0.5);
 }
 .display.result-mode { color: var(--accent); }
 
