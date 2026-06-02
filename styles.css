@@ -107,8 +107,10 @@ body {
     border: 2px solid #e0e0e0;
     border-radius: 10px;
     background: #f9f9f9;
+    color: #333;
     font-family: 'Courier New', monospace;
     outline: none;
+    color-scheme: light;
 }
 
 .button-grid {
@@ -187,6 +189,9 @@ body {
     font-family: 'Courier New', monospace;
     outline: none;
     transition: border-color 0.3s ease;
+    background: #ffffff;
+    color: #333;
+    color-scheme: light;
 }
 
 .equation-input:focus {
@@ -304,6 +309,9 @@ body {
     border-radius: 8px;
     font-family: 'Courier New', monospace;
     outline: none;
+    background: #ffffff;
+    color: #333;
+    color-scheme: light;
 }
 
 .input-group input:focus {
