@@ -416,8 +416,9 @@ input  { font-family: inherit; }
 .solver-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-light);
-    background: var(--bg-input);
-    color: var(--text);
+    background: var(--bg-input) !important;
+    color: var(--text) !important;
+    outline: none !important;
 }
 .solver-input:-webkit-autofill,
 .solver-input:-webkit-autofill:focus {

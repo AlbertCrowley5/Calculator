@@ -89,8 +89,11 @@ class Calculator {
     getDisplayInput() { return document.getElementById('display'); }
 
     getExpressionForEval(asciiMath) {
+        const ansVal = this.lastAnswer !== null ? String(this.lastAnswer) : '0';
         return asciiMath
-            .replace(/\bAns\b/g, this.lastAnswer !== null ? String(this.lastAnswer) : '0')
+            .replace(/\bAns\b/g, ansVal)
+            .replace(/\bA\s+n\s+s\b/g, ansVal)
+            .replace(/\bA\s*\*\s*n\s*\*\s*s\b/g, ansVal)
             .replace(/arcsin/g, 'asin')
             .replace(/arccos/g, 'acos')
             .replace(/arctan/g, 'atan')
@@ -109,7 +112,10 @@ class Calculator {
 
     subAns(expr) {
         const v = this.lastAnswer !== null ? String(this.lastAnswer) : '0';
-        return expr.replace(/\bAns\b/g, v);
+        return expr
+            .replace(/\bAns\b/g, v)
+            .replace(/\bA\s+n\s+s\b/g, v)
+            .replace(/\bA\s*\*\s*n\s*\*\s*s\b/g, v);
     }
 
     // ── Universal keyboard routing ───────────────────────────
@@ -200,6 +206,36 @@ class Calculator {
         if (!text) return;
         if (this.shiftActive) this.toggleShift();
         this.appendToSolverInput(text);
+    }
+
+    pressFunctionInverse(fn) {
+        if (this.currentMode === 'basic') {
+            const invLatex = {
+                sin: '\\arcsin\\left(#?\\right)',
+                cos: '\\arccos\\left(#?\\right)',
+                tan: '\\arctan\\left(#?\\right)',
+                log: '10^{#?}',
+                ln:  'e^{#?}',
+            };
+            const latex = invLatex[fn];
+            if (!latex) return;
+            const mf = this.getDisplayInput();
+            if (!mf) return;
+            if (this.resultShown) { mf.setValue(''); mf.classList.remove('result-mode'); this.resultShown = false; }
+            mf.insert(latex, { focus: true });
+            this.currentInput = mf.getValue();
+        } else {
+            const invText = {
+                sin: 'arcsin(',
+                cos: 'arccos(',
+                tan: 'arctan(',
+                log: '10^(',
+                ln:  'e^(',
+            };
+            const text = invText[fn];
+            if (!text) return;
+            this.appendToSolverInput(text);
+        }
     }
 
     insertFractionUnified() {
@@ -344,7 +380,11 @@ class Calculator {
 
         if (this.resultShown) {
             const isChainOp = /^[+\-*/^]/.test(value);
-            if (!isChainOp) mf.setValue('');
+            if (isChainOp) {
+                mf.setValue('\\operatorname{Ans}');
+            } else {
+                mf.setValue('');
+            }
             mf.classList.remove('result-mode');
             this.resultShown = false;
         }
@@ -394,11 +434,11 @@ class Calculator {
         const mf = this.getDisplayInput();
         if (!mf) return;
         if (this.resultShown) {
-            mf.setValue('Ans');
+            mf.setValue('\\operatorname{Ans}');
             mf.classList.remove('result-mode');
             this.resultShown = false;
         } else {
-            mf.insert('Ans', { focus: true });
+            mf.insert('\\operatorname{Ans}', { focus: true });
         }
         this.currentInput = mf.getValue();
     }
