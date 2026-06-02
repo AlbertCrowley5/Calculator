@@ -23,6 +23,9 @@
                 <a href="#features" class="nav-link">Features</a>
                 <a href="#about" class="nav-link">About</a>
             </div>
+            <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation" onclick="document.querySelector('.nav-links').classList.toggle('nav-open')">
+                <span></span><span></span><span></span>
+            </button>
             <div class="nav-controls">
                 <button class="theme-toggle" id="theme-toggle" title="Switch between dark and light mode">
                     <span class="theme-icon">☀️</span>
@@ -67,21 +70,7 @@
     <section class="calc-section" id="calculator">
         <div class="calc-app" id="calc-app" data-ui="simple">
 
-            <!-- Simple / Advanced Toggle -->
-            <div class="ui-mode-toggle">
-                <button class="ui-pill active" id="pill-simple"
-                    onclick="calculator.setUIMode('simple')"
-                    title="Standard calculator — perfect for everyday use and GCSE level">
-                    Simple
-                </button>
-                <button class="ui-pill" id="pill-advanced"
-                    onclick="calculator.setUIMode('advanced')"
-                    title="Full suite — equation solver, factorising, simultaneous equations and more">
-                    Advanced
-                </button>
-            </div>
-
-            <!-- Mode Tabs (Advanced only) -->
+            <!-- Mode Tabs -->
             <nav class="mode-tabs">
                 <button class="mode-tab active" data-mode="basic">Calculator</button>
                 <button class="mode-tab" data-mode="equations">Equations</button>
@@ -100,6 +89,15 @@
                         <div class="display-prev" id="display-prev"></div>
                         <math-field id="display" class="display" virtual-keyboard-mode="off" math-virtual-keyboard-policy="manual" inputmode="none"></math-field>
                         <div class="display-ans" id="display-ans"></div>
+                    </div>
+                    <!-- Simple ↔ Advanced toggle (only shows on Calculator tab) -->
+                    <div class="calc-mode-row">
+                        <span class="cms-lbl cms-lbl-l">Simple</span>
+                        <label class="ios-toggle" title="Switch between Simple and Advanced calculator mode">
+                            <input type="checkbox" id="calc-mode-chk" onchange="calculator.setUIMode(this.checked ? 'advanced' : 'simple')">
+                            <span class="ios-track"><span class="ios-thumb"></span></span>
+                        </label>
+                        <span class="cms-lbl cms-lbl-r">Advanced</span>
                     </div>
                     <div class="history-strip" id="history-strip">
                         <div class="hist-strip-header">
@@ -331,9 +329,9 @@
                 <!-- Advanced Keyboard Grid -->
                 <div class="keyboard-wrap" id="keyboard-wrap">
 
-                    <!-- Row 1: Shift + trig functions -->
+                    <!-- Row 1: Shift + trig + log -->
                     <button class="btn k-shift" id="shift-btn" onclick="calculator.toggleShift()"
-                        title="Show inverse functions: sin⁻¹, cos⁻¹, tan⁻¹, 10ˣ, eˣ, x²">Shift</button>
+                        title="Show inverse functions: sin⁻¹, cos⁻¹, tan⁻¹, 10ˣ, eˣ, ∛x">Shift</button>
                     <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sin')"
                         title="Sine of an angle — press Shift for sin⁻¹ (inverse sine)">
                         <span class="fn-n">sin</span><span class="fn-s">sin⁻¹</span>
@@ -351,37 +349,69 @@
                         <span class="fn-n">log</span><span class="fn-s">10ˣ</span>
                     </button>
 
-                    <!-- Row 2: More functions -->
-                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sqrt')"
-                        title="Square root — press Shift to raise to a power">
-                        <span class="fn-n">√x</span><span class="fn-s">x²</span>
+                    <!-- Row 2: Hyperbolic + ln + abs -->
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sinh')"
+                        title="Hyperbolic sine — press Shift for sinh⁻¹">
+                        <span class="fn-n">sinh</span><span class="fn-s">sinh⁻¹</span>
                     </button>
-                    <button class="btn k-fn" onclick="calculator.insertPowerUnified()"
-                        title="Raise to any power, e.g. x³ or 2⁸">xⁿ</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('cosh')"
+                        title="Hyperbolic cosine — press Shift for cosh⁻¹">
+                        <span class="fn-n">cosh</span><span class="fn-s">cosh⁻¹</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('tanh')"
+                        title="Hyperbolic tangent — press Shift for tanh⁻¹">
+                        <span class="fn-n">tanh</span><span class="fn-s">tanh⁻¹</span>
+                    </button>
                     <button class="btn k-fn" onclick="calculator.pressFunctionUnified('ln')"
                         title="Natural logarithm — press Shift for e to the power x">
                         <span class="fn-n">ln</span><span class="fn-s">eˣ</span>
                     </button>
+                    <button class="btn k-fn" onclick="calculator.insertAbsUnified()"
+                        title="Absolute value">|x|</button>
+
+                    <!-- Row 3: Powers + roots + fraction -->
+                    <button class="btn k-fn" onclick="calculator.squareUnified()"
+                        title="Square · Shift for cube">
+                        <span class="fn-n">x²</span><span class="fn-s">x³</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.insertPowerUnified()"
+                        title="Raise to any power">xⁿ</button>
+                    <button class="btn k-fn" onclick="calculator.pressFunctionUnified('sqrt')"
+                        title="Square root · Shift for cube root">
+                        <span class="fn-n">√x</span><span class="fn-s">∛x</span>
+                    </button>
+                    <button class="btn k-fn" onclick="calculator.insertFactorial()"
+                        title="Factorial — e.g. 5! = 120">n!</button>
                     <button class="btn k-fn k-frac-btn" onclick="calculator.insertFractionUnified()"
                         title="Create a fraction (numerator over denominator)">
                         <span class="k-frac-icon"><span class="k-frac-top">a</span><span class="k-frac-bot">b</span></span>
                     </button>
-                    <button class="btn k-fn" onclick="calculator.insertAbsUnified()"
-                        title="Absolute value — makes any number positive, e.g. |−5| = 5">|x|</button>
 
-                    <!-- Row 3: Control -->
+                    <!-- Row 4: Combinatorics + special constants -->
+                    <button class="btn k-fn" onclick="calculator.insertNCr()"
+                        title="Combinations — ways to choose r from n (order doesn't matter)">ⁿCᵣ</button>
+                    <button class="btn k-fn" onclick="calculator.insertNPr()"
+                        title="Permutations — ways to arrange r from n (order matters)">ⁿPᵣ</button>
+                    <button class="btn k-fn" onclick="calculator.insertImaginary()"
+                        title="Imaginary unit — i² = −1 (complex numbers)">i</button>
+                    <button class="btn k-fn" onclick="calculator.insertRandom()"
+                        title="Random number between 0 and 1">Ran#</button>
+                    <button class="btn k-fn" onclick="calculator.insertEXP()"
+                        title="Enter a power of 10, e.g. 6.02 × 10²³">EXP</button>
+
+                    <!-- Row 5: Control -->
                     <button class="btn k-ctrl" onclick="calculator.doClear()"
-                        title="Clear everything and start fresh">C</button>
+                        title="Clear everything">C</button>
                     <button class="btn k-ctrl" onclick="calculator.doBackspace()"
-                        title="Delete the last character">⌫</button>
+                        title="Delete last character">⌫</button>
                     <button class="btn k-ctrl" onclick="calculator.keyPress('(')"
                         title="Open bracket">(</button>
                     <button class="btn k-ctrl" onclick="calculator.keyPress(')')"
                         title="Close bracket">)</button>
                     <button class="btn k-ans" onclick="calculator.doAns()"
-                        title="Insert the previous answer into your calculation">ANS</button>
+                        title="Insert the previous answer — shown as 'Ans' in the expression">Ans</button>
 
-                    <!-- Row 4: 7 8 9 ÷ [π/x] -->
+                    <!-- Row 6: 7 8 9 ÷ [π/x] -->
                     <button class="btn k-num" onclick="calculator.keyPress('7')">7</button>
                     <button class="btn k-num" onclick="calculator.keyPress('8')">8</button>
                     <button class="btn k-num" onclick="calculator.keyPress('9')">9</button>
@@ -391,7 +421,7 @@
                         <span class="ctx-a" title="The variable x">x</span>
                     </button>
 
-                    <!-- Row 5: 4 5 6 × [e/y] -->
+                    <!-- Row 7: 4 5 6 × [e/y] -->
                     <button class="btn k-num" onclick="calculator.keyPress('4')">4</button>
                     <button class="btn k-num" onclick="calculator.keyPress('5')">5</button>
                     <button class="btn k-num" onclick="calculator.keyPress('6')">6</button>
@@ -401,7 +431,7 @@
                         <span class="ctx-a" title="The variable y">y</span>
                     </button>
 
-                    <!-- Row 6: 1 2 3 − [±/=] -->
+                    <!-- Row 8: 1 2 3 − [±/=] -->
                     <button class="btn k-num" onclick="calculator.keyPress('1')">1</button>
                     <button class="btn k-num" onclick="calculator.keyPress('2')">2</button>
                     <button class="btn k-num" onclick="calculator.keyPress('3')">3</button>
@@ -411,7 +441,7 @@
                         <span class="ctx-a" title="Insert equals sign">=</span>
                     </button>
 
-                    <!-- Row 7: 0 (wide) . + = -->
+                    <!-- Row 9: 0 (wide) . + = -->
                     <button class="btn k-num k-wide" onclick="calculator.keyPress('0')">0</button>
                     <button class="btn k-num" onclick="calculator.keyPress('.')" title="Decimal point">.</button>
                     <button class="btn k-op"  onclick="calculator.keyPress('+')" title="Add">+</button>
@@ -435,7 +465,7 @@
                 <p>One calculator that covers all the maths you'll ever need — from everyday arithmetic to advanced algebra</p>
             </div>
             <div class="features-grid">
-                <div class="feat-card">
+                <div role="button" tabindex="0" class="feat-card feat-card-link" onclick="calculator.goToMode('basic')">
                     <div class="feat-icon">⊞</div>
                     <h3>Standard Calculator</h3>
                     <p>Everything a scientific calculator does, with a visual display that shows fractions and exponents properly.</p>
@@ -446,7 +476,7 @@
                         <li>π and e constants</li>
                     </ul>
                 </div>
-                <div class="feat-card featured">
+                <div role="button" tabindex="0" class="feat-card featured feat-card-link" onclick="calculator.goToMode('equations')">
                     <div class="feat-ribbon">Most Used</div>
                     <div class="feat-icon">x²</div>
                     <h3>Equation Solver</h3>
@@ -458,7 +488,7 @@
                         <li>Optional complex roots</li>
                     </ul>
                 </div>
-                <div class="feat-card">
+                <div role="button" tabindex="0" class="feat-card feat-card-link" onclick="calculator.goToMode('factorise')">
                     <div class="feat-icon">ab</div>
                     <h3>Factorise</h3>
                     <p>Break any expression into its factors — with full step-by-step working shown.</p>
@@ -469,7 +499,7 @@
                         <li>Rational factors only</li>
                     </ul>
                 </div>
-                <div class="feat-card">
+                <div role="button" tabindex="0" class="feat-card feat-card-link" onclick="calculator.goToMode('simultaneous')">
                     <div class="feat-icon">⩵</div>
                     <h3>Simultaneous Equations</h3>
                     <p>Solve two equations at once to find where they meet — step by step using Cramer's Rule.</p>
@@ -480,7 +510,7 @@
                         <li>Verification step included</li>
                     </ul>
                 </div>
-                <div class="feat-card">
+                <div role="button" tabindex="0" class="feat-card feat-card-link" onclick="calculator.goToMode('function')">
                     <div class="feat-icon">ƒ</div>
                     <h3>Function Evaluator</h3>
                     <p>Define any function f(x) and either evaluate it at a point or find where it equals a value.</p>
@@ -491,8 +521,8 @@
                         <li>Finds multiple solutions</li>
                     </ul>
                 </div>
-                <div class="feat-card">
-                    <div class="feat-icon">⌨</div>
+                <div role="button" tabindex="0" class="feat-card feat-card-link" onclick="calculator.goToMode('basic')">
+                    <div class="feat-icon">▦</div>
                     <h3>Visual Keyboard</h3>
                     <p>One shared keyboard works across all modes. Fractions and exponents display visually — just like pen and paper.</p>
                     <ul class="feat-list">
@@ -527,15 +557,25 @@
                 <div class="about-formulas">
                     <div class="formula-card">
                         <div class="fc-label">Quadratic Formula</div>
-                        <div class="fc-formula">x = <span class="fc-accent">-b ± √(b²-4ac)</span> / 2a</div>
+                        <div class="fc-formula">
+                            <em>x</em> =
+                            <span class="mf"><span class="mf-n">−<em>b</em> ± <span class="mf-sqrt"><em>b</em><sup>2</sup> − 4<em>ac</em></span></span><span class="mf-d">2<em>a</em></span></span>
+                        </div>
                     </div>
                     <div class="formula-card">
-                        <div class="fc-label">Newton-Raphson Method</div>
-                        <div class="fc-formula">x<sub>n+1</sub> = x<sub>n</sub> − <span class="fc-accent">f(x<sub>n</sub>) / f′(x<sub>n</sub>)</span></div>
+                        <div class="fc-label">Newton–Raphson Method</div>
+                        <div class="fc-formula">
+                            <em>x</em><sub><em>n</em>+1</sub> = <em>x</em><sub><em>n</em></sub> −
+                            <span class="mf"><span class="mf-n"><em>f</em>(<em>x</em><sub><em>n</em></sub>)</span><span class="mf-d"><em>f</em>′(<em>x</em><sub><em>n</em></sub>)</span></span>
+                        </div>
                     </div>
                     <div class="formula-card">
                         <div class="fc-label">Cramer's Rule</div>
-                        <div class="fc-formula">x = <span class="fc-accent">D<sub>x</sub> / D</span>,&nbsp;&nbsp;y = <span class="fc-accent">D<sub>y</sub> / D</span></div>
+                        <div class="fc-formula">
+                            <em>x</em> = <span class="mf"><span class="mf-n"><em>D</em><sub>x</sub></span><span class="mf-d"><em>D</em></span></span>
+                            &ensp;,&ensp;
+                            <em>y</em> = <span class="mf"><span class="mf-n"><em>D</em><sub>y</sub></span><span class="mf-d"><em>D</em></span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -579,7 +619,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2024 Mathics Advanced Suite · Powered by math.js · Built for precision</p>
+                <p>© 2025 Mathics · Powered by math.js &amp; MathLive · Open source mathematics</p>
                 <div class="footer-badges">
                     <span class="f-badge">Free</span>
                     <span class="f-badge">No Ads</span>

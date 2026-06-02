@@ -84,12 +84,26 @@ class Calculator {
 
     getExpressionForEval(asciiMath) {
         return asciiMath
+            .replace(/\bAns\b/g, this.lastAnswer !== null ? String(this.lastAnswer) : '0')
             .replace(/arcsin/g, 'asin')
             .replace(/arccos/g, 'acos')
             .replace(/arctan/g, 'atan')
+            .replace(/arcsinh/g, 'asinh')
+            .replace(/arccosh/g, 'acosh')
+            .replace(/arctanh/g, 'atanh')
             .replace(/\bln\b/g, 'log')
             .replace(/log_\(?\s*10\s*\)?/g, 'log10')
+            .replace(/\bcbrt\(/g, 'nthRoot(')
+            .replace(/\bnCr\s*\(/g, 'combinations(')
+            .replace(/\bnPr\s*\(/g, 'permutations(')
+            .replace(/Ran#/g, '(random())')
+            .replace(/×10\^/g, '*10^')
             .replace(/\bxx\b/g, '*');
+    }
+
+    subAns(expr) {
+        const v = this.lastAnswer !== null ? String(this.lastAnswer) : '0';
+        return expr.replace(/\bAns\b/g, v);
     }
 
     // ── Universal keyboard routing ───────────────────────────
@@ -171,7 +185,10 @@ class Calculator {
             tan:  s ? 'arctan(' : 'tan(',
             log:  s ? '10^('    : 'log(',
             ln:   s ? 'e^('     : 'ln(',
-            sqrt: s ? '^('      : 'sqrt(',
+            sqrt: s ? 'cbrt('   : 'sqrt(',
+            sinh: s ? 'arcsinh(' : 'sinh(',
+            cosh: s ? 'arccosh(' : 'cosh(',
+            tanh: s ? 'arctanh(' : 'tanh(',
         };
         const text = map[fn];
         if (!text) return;
@@ -204,9 +221,84 @@ class Calculator {
         }
     }
 
+    insertFactorial() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.executeCommand?.(['insert', '!']);
+        } else {
+            this.appendToSolverInput('!');
+        }
+    }
+
+    insertNCr() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.insert('nCr(', { focus: true });
+        } else {
+            this.appendToSolverInput('nCr(');
+        }
+    }
+
+    insertNPr() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.insert('nPr(', { focus: true });
+        } else {
+            this.appendToSolverInput('nPr(');
+        }
+    }
+
+    insertImaginary() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.insert('i', { focus: true });
+        } else {
+            this.appendToSolverInput('i');
+        }
+    }
+
+    insertRandom() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.insert('Ran#', { focus: true });
+        } else {
+            this.appendToSolverInput('Ran#');
+        }
+    }
+
+    insertEXP() {
+        if (this.currentMode === 'basic') {
+            const mf = this.getDisplayInput();
+            if (mf) mf.insert('\\times10^{#?}', { focus: true });
+        } else {
+            this.appendToSolverInput('×10^(');
+        }
+    }
+
+    goToMode(mode) {
+        if (mode !== 'basic') {
+            this.setUIMode('advanced');
+            const chk = document.getElementById('calc-mode-chk');
+            if (chk) chk.checked = true;
+        }
+        const delay = mode !== 'basic' ? 120 : 0;
+        setTimeout(() => {
+            document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth' });
+            const btn = document.querySelector(`[data-mode="${mode}"]`);
+            if (btn) this.switchMode(mode, btn);
+        }, delay);
+    }
+
     squareUnified() {
-        const display = this.getDisplayInput();
-        if (display) display.executeCommand?.(['insert', '^{2}']);
+        const mf = this.getDisplayInput();
+        if (this.currentMode !== 'basic') {
+            this.appendToSolverInput(this.shiftActive ? '^3' : '^2');
+            if (this.shiftActive) this.toggleShift();
+            return;
+        }
+        if (!mf) return;
+        mf.executeCommand?.(['insert', this.shiftActive ? '^{3}' : '^{2}']);
+        if (this.shiftActive) this.toggleShift();
     }
 
     // ── UI Mode (Simple / Advanced) ───────────────────────────
@@ -214,8 +306,8 @@ class Calculator {
         const app = document.getElementById('calc-app');
         if (!app) return;
         app.setAttribute('data-ui', mode);
-        document.getElementById('pill-simple')  ?.classList.toggle('active', mode === 'simple');
-        document.getElementById('pill-advanced')?.classList.toggle('active', mode === 'advanced');
+        const chk = document.getElementById('calc-mode-chk');
+        if (chk) chk.checked = mode === 'advanced';
         if (mode === 'simple') {
             if (this.shiftActive) this.toggleShift();
             this.switchMode('basic', document.querySelector('[data-mode="basic"]'));
@@ -293,16 +385,14 @@ class Calculator {
 
     // ── ANS ──────────────────────────────────────────────────
     appendAns() {
-        if (this.lastAnswer === null || this.lastAnswer === undefined) return;
         const mf = this.getDisplayInput();
         if (!mf) return;
-        const s = String(this.lastAnswer);
         if (this.resultShown) {
-            mf.setValue(s);
+            mf.setValue('Ans');
             mf.classList.remove('result-mode');
             this.resultShown = false;
         } else {
-            mf.insert(s, { focus: true });
+            mf.insert('Ans', { focus: true });
         }
         this.currentInput = mf.getValue();
     }
@@ -317,24 +407,22 @@ class Calculator {
     pressFunction(fn) {
         const s = this.shiftActive;
         const latexMap = {
-            sin:  s ? '\\arcsin\\left(#?\\right)' : '\\sin\\left(#?\\right)',
-            cos:  s ? '\\arccos\\left(#?\\right)' : '\\cos\\left(#?\\right)',
-            tan:  s ? '\\arctan\\left(#?\\right)' : '\\tan\\left(#?\\right)',
-            log:  s ? '10^{#?}'                   : '\\log_{10}\\left(#?\\right)',
-            ln:   s ? 'e^{#?}'                    : '\\ln\\left(#?\\right)',
-            sqrt: s ? '^{#?}'                     : '\\sqrt{#?}',
+            sin:  s ? '\\arcsin\\left(#?\\right)'           : '\\sin\\left(#?\\right)',
+            cos:  s ? '\\arccos\\left(#?\\right)'           : '\\cos\\left(#?\\right)',
+            tan:  s ? '\\arctan\\left(#?\\right)'           : '\\tan\\left(#?\\right)',
+            log:  s ? '10^{#?}'                             : '\\log_{10}\\left(#?\\right)',
+            ln:   s ? 'e^{#?}'                              : '\\ln\\left(#?\\right)',
+            sqrt: s ? '\\sqrt[3]{#?}'                       : '\\sqrt{#?}',
+            sinh: s ? '\\operatorname{arcsinh}\\left(#?\\right)' : '\\sinh\\left(#?\\right)',
+            cosh: s ? '\\operatorname{arccosh}\\left(#?\\right)' : '\\cosh\\left(#?\\right)',
+            tanh: s ? '\\operatorname{arctanh}\\left(#?\\right)' : '\\tanh\\left(#?\\right)',
         };
         const latex = latexMap[fn];
         if (!latex) return;
         if (this.shiftActive) this.toggleShift();
-
         const mf = this.getDisplayInput();
         if (!mf) return;
-        if (this.resultShown) {
-            mf.setValue('');
-            mf.classList.remove('result-mode');
-            this.resultShown = false;
-        }
+        if (this.resultShown) { mf.setValue(''); mf.classList.remove('result-mode'); this.resultShown = false; }
         mf.insert(latex, { focus: true });
         this.currentInput = mf.getValue();
     }
@@ -538,8 +626,7 @@ class Calculator {
     }
 
     appendAnsToInput() {
-        if (this.lastAnswer === null || this.lastAnswer === undefined) return;
-        this.appendToInput(String(this.lastAnswer));
+        this.appendToInput('Ans');
     }
 
     backspaceInput() {
