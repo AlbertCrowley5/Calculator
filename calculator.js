@@ -16,13 +16,19 @@ class Calculator {
 
     // ── Theme ────────────────────────────────────────────────
     initializeTheme() {
+        const html = document.documentElement;
+        try {
+            const saved = localStorage.getItem('mathics-theme');
+            if (saved) { html.setAttribute('data-theme', saved); }
+        } catch {}
         const toggle = document.getElementById('theme-toggle');
         if (toggle) {
+            toggle.querySelector('.theme-icon').textContent = html.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
             toggle.addEventListener('click', () => {
-                const html = document.documentElement;
                 const isDark = html.getAttribute('data-theme') === 'dark';
                 html.setAttribute('data-theme', isDark ? 'light' : 'dark');
                 toggle.querySelector('.theme-icon').textContent = isDark ? '🌙' : '☀️';
+                try { localStorage.setItem('mathics-theme', isDark ? 'light' : 'dark'); } catch {}
             });
         }
     }
@@ -1001,16 +1007,27 @@ class Calculator {
 
     // ── Expand ───────────────────────────────────────────────
     expand() {
-        const input = document.getElementById('expand-input').value.trim();
+        const raw   = document.getElementById('expand-input').value.trim();
         const sol   = document.getElementById('expand-solution');
-        if (!input) { this.showError(sol, 'Please enter an expression'); return; }
+        if (!raw) { this.showError(sol, 'Please enter an expression'); return; }
         try {
-            const steps = [`Expression: ${input}`];
-            const expanded = math.simplify(input).toString();
-            const formatted = this.formatExpanded(expanded);
-            steps.push(`Expanded: ${formatted}`);
-            this.displaySolution(sol, [formatted], steps);
-        } catch (e) { this.showError(document.getElementById('expand-solution'), e.message); }
+            // Insert * for implicit multiplication: )( → )*( , 3( → 3*( , )x → )*x , 3x → 3*x
+            const processed = raw
+                .replace(/\)\s*\(/g, ')*(')
+                .replace(/(\d)\s*\(/g, '$1*(')
+                .replace(/\)\s*([a-zA-Z])/g, ')*$1')
+                .replace(/(\d)\s*([a-zA-Z])/g, '$1*$2');
+            const steps = [`Expression: ${raw}`];
+            const expanded = math.simplify(processed).toString();
+            if (expanded === processed || expanded === raw) {
+                steps.push('Already fully expanded');
+                this.displaySolution(sol, [this.formatExpanded(expanded)], steps);
+            } else {
+                const formatted = this.formatExpanded(expanded);
+                steps.push(`Expanded: ${formatted}`);
+                this.displaySolution(sol, [formatted], steps);
+            }
+        } catch (e) { this.showError(sol, e.message); }
     }
 
     formatExpanded(str) {
@@ -1027,43 +1044,8 @@ const calculator = new Calculator();
 window.addEventListener('math-virtual-keyboard-open', e => { e.preventDefault(); }, true);
 if (window.mathVirtualKeyboard) window.mathVirtualKeyboard.visible = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await customElements.whenDefined('math-field');
-
-    // Kill MathLive virtual keyboard globally via its public API
-    if (window.mathVirtualKeyboard) {
-        window.mathVirtualKeyboard.visible = false;
-        window.mathVirtualKeyboard.hide?.();
-    }
-
-    const display = document.getElementById('display');
-
-    if (display) {
-        display.smartFence = false;
-        display.virtualKeyboardMode = 'off';
-        // Suppress native on-screen keyboard on mobile (MathLive uses a hidden textarea internally)
-        const suppressNativeKb = () => {
-            const ta = display.shadowRoot?.querySelector('textarea');
-            if (ta) ta.setAttribute('inputmode', 'none');
-        };
-        suppressNativeKb();
-        setTimeout(suppressNativeKb, 500);
-
-        display.addEventListener('keydown', e => {
-            if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); calculator.calculate(); }
-            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); calculator.clear(); }
-        });
-
-        display.addEventListener('input', () => {
-            calculator.currentInput = display.getValue ? display.getValue() : '';
-            if (calculator.resultShown) {
-                display.classList.remove('result-mode');
-                calculator.resultShown = false;
-            }
-        });
-
-        display.focus();
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    // ── Non-MathLive init (runs immediately) ──────────────────
 
     // Restore persisted UI mode (default: simple)
     const savedMode = (() => { try { return localStorage.getItem('mathics-ui-mode'); } catch { return null; } })();
@@ -1076,25 +1058,82 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Physical keyboard redirect to display (calculator mode only)
-    document.addEventListener('keydown', e => {
-        if (calculator.currentMode !== 'basic') return;
-        if (document.activeElement.classList.contains('solver-input')) return;
-        if (document.activeElement !== display && display) {
-            if (/^[0-9+\-*/.^()e]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                e.preventDefault();
-                display.executeCommand?.(['insert', e.key]);
-                display.focus();
-            }
-        }
-    });
-
     // Solver input Enter key → execute
     document.querySelectorAll('.solver-input').forEach(input => {
         input.addEventListener('keydown', e => {
             if (e.key !== 'Enter') return;
             e.preventDefault();
             calculator.execute();
+        });
+    });
+
+    // Load formula from formulas.html if one was queued
+    try {
+        const formulaLoad = localStorage.getItem('mathics-formula-load');
+        if (formulaLoad) {
+            localStorage.removeItem('mathics-formula-load');
+            const { mode, expression, inputId, expression2, inputId2 } = JSON.parse(formulaLoad);
+            calculator.goToMode(mode || 'equations');
+            setTimeout(() => {
+                if (inputId) {
+                    const el = document.getElementById(inputId);
+                    if (el) { el.value = expression || ''; calculator.activeInput = el; el.focus(); }
+                }
+                if (inputId2) {
+                    const el2 = document.getElementById(inputId2);
+                    if (el2) el2.value = expression2 || '';
+                }
+            }, 350);
+        }
+    } catch {}
+
+    // ── MathLive-dependent init (waits for custom element) ────
+    customElements.whenDefined('math-field').then(() => {
+        if (window.mathVirtualKeyboard) {
+            window.mathVirtualKeyboard.visible = false;
+            window.mathVirtualKeyboard.hide?.();
+        }
+
+        const display = document.getElementById('display');
+
+        if (display) {
+            display.smartFence = false;
+            display.virtualKeyboardMode = 'off';
+            const suppressNativeKb = () => {
+                const ta = display.shadowRoot?.querySelector('textarea');
+                if (ta) ta.setAttribute('inputmode', 'none');
+            };
+            suppressNativeKb();
+            setTimeout(suppressNativeKb, 500);
+
+            display.addEventListener('keydown', e => {
+                if (e.key === 'Enter')  { e.preventDefault(); e.stopPropagation(); calculator.calculate(); }
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); calculator.clear(); }
+            });
+
+            display.addEventListener('input', () => {
+                calculator.currentInput = display.getValue ? display.getValue() : '';
+                if (calculator.resultShown) {
+                    display.classList.remove('result-mode');
+                    calculator.resultShown = false;
+                }
+            });
+
+            display.focus();
+        }
+
+        // Physical keyboard redirect to display (calculator mode only)
+        document.addEventListener('keydown', e => {
+            const display = document.getElementById('display');
+            if (calculator.currentMode !== 'basic') return;
+            if (document.activeElement.classList.contains('solver-input')) return;
+            if (document.activeElement !== display && display) {
+                if (/^[0-9+\-*/.^()e]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    e.preventDefault();
+                    display.executeCommand?.(['insert', e.key]);
+                    display.focus();
+                }
+            }
         });
     });
 });

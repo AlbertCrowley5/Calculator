@@ -282,11 +282,16 @@
                     <button class="btn k-fn" onclick="calculator.squareUnified()"
                         title="Square — multiply a number by itself, e.g. 5² = 25">x²</button>
 
-                    <!-- Row 2: Constants + control -->
-                    <button class="btn k-fn" onclick="calculator.keyPress('pi')"
-                        title="Pi — π ≈ 3.14159 (used in circles and trig)">π</button>
-                    <button class="btn k-ans" onclick="calculator.doAns()"
-                        title="Use the previous answer in your next calculation">ANS</button>
+                    <!-- Row 2: Constants + control (π/x and ANS/y switch in algebra mode) -->
+                    <button class="btn k-fn" onclick="calculator.contextPress('pi', 'x')"
+                        title="Pi (π) in calculator mode, variable x in equation modes">
+                        <span class="ctx-c">π</span><span class="ctx-a">x</span>
+                    </button>
+                    <button class="btn k-ans"
+                        onclick="calculator.currentMode==='basic' ? calculator.doAns() : calculator.appendToSolverInput('y')"
+                        title="Use previous answer in calculator mode, variable y in equation modes">
+                        <span class="ctx-c">ANS</span><span class="ctx-a">y</span>
+                    </button>
                     <button class="btn k-ctrl" onclick="calculator.doClear()"
                         title="Clear everything and start again">C</button>
                     <button class="btn k-ctrl" onclick="calculator.keyPress('(')"
@@ -310,13 +315,15 @@
                     <button class="btn k-fn"  onclick="calculator.insertPowerUnified()"
                         title="Raise to any power — e.g. 2³ or x⁴">xⁿ</button>
 
-                    <!-- Row 5: 1 2 3 − ± -->
+                    <!-- Row 5: 1 2 3 − ±/= -->
                     <button class="btn k-num" onclick="calculator.keyPress('1')">1</button>
                     <button class="btn k-num" onclick="calculator.keyPress('2')">2</button>
                     <button class="btn k-num" onclick="calculator.keyPress('3')">3</button>
                     <button class="btn k-op"  onclick="calculator.keyPress('-')" title="Subtract">−</button>
                     <button class="btn k-fn"  onclick="calculator.contextSignOrEquals()"
-                        title="Toggle positive / negative">±</button>
+                        title="Toggle sign in calculator mode, type = in equation modes">
+                        <span class="ctx-c">±</span><span class="ctx-a">=</span>
+                    </button>
 
                     <!-- Row 6: 0 . + = -->
                     <button class="btn k-num k-wide" onclick="calculator.keyPress('0')">0</button>
@@ -555,28 +562,14 @@
                     </div>
                 </div>
                 <div class="about-formulas">
-                    <div class="formula-card">
-                        <div class="fc-label">Quadratic Formula</div>
-                        <div class="fc-formula">
-                            <em>x</em> =
-                            <span class="mf"><span class="mf-n">−<em>b</em> ± <span class="mf-sqrt"><em>b</em><sup>2</sup> − 4<em>ac</em></span></span><span class="mf-d">2<em>a</em></span></span>
+                    <a href="formulas.html" class="formulas-link-card">
+                        <div class="flc-icon">∑</div>
+                        <div class="flc-body">
+                            <strong>Formula Reference</strong>
+                            <p>Browse the full formula library — algebra, trigonometry, calculus, geometry, statistics, and more. One click loads any formula directly into the calculator.</p>
                         </div>
-                    </div>
-                    <div class="formula-card">
-                        <div class="fc-label">Newton–Raphson Method</div>
-                        <div class="fc-formula">
-                            <em>x</em><sub><em>n</em>+1</sub> = <em>x</em><sub><em>n</em></sub> −
-                            <span class="mf"><span class="mf-n"><em>f</em>(<em>x</em><sub><em>n</em></sub>)</span><span class="mf-d"><em>f</em>′(<em>x</em><sub><em>n</em></sub>)</span></span>
-                        </div>
-                    </div>
-                    <div class="formula-card">
-                        <div class="fc-label">Cramer's Rule</div>
-                        <div class="fc-formula">
-                            <em>x</em> = <span class="mf"><span class="mf-n"><em>D</em><sub>x</sub></span><span class="mf-d"><em>D</em></span></span>
-                            &ensp;,&ensp;
-                            <em>y</em> = <span class="mf"><span class="mf-n"><em>D</em><sub>y</sub></span><span class="mf-d"><em>D</em></span></span>
-                        </div>
-                    </div>
+                        <div class="flc-arrow">→</div>
+                    </a>
                 </div>
             </div>
         </div>

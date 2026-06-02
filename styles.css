@@ -416,6 +416,13 @@ input  { font-family: inherit; }
 .solver-input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-light);
+    background: var(--bg-input);
+    color: var(--text);
+}
+.solver-input:-webkit-autofill,
+.solver-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-input) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
 }
 .solver-input::placeholder { color: var(--text-3); font-style: italic; }
 
@@ -941,6 +948,33 @@ input  { font-family: inherit; }
 .fc-formula { font-family: 'Courier New', monospace; font-size: 0.93em; color: var(--text); line-height: 1.5; }
 .fc-accent  { color: var(--accent); font-weight: 700; }
 
+/* Formulas link card (in about section) */
+.formulas-link-card {
+    display: flex; align-items: center; gap: 18px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 22px 24px;
+    text-decoration: none; color: var(--text);
+    box-shadow: var(--sh-sm);
+    transition: all var(--tr);
+}
+.formulas-link-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(99,102,241,0.18);
+    transform: translateY(-2px);
+}
+[data-theme="dark"] .formulas-link-card { background: #111113; border-color: #27272a; }
+[data-theme="dark"] .formulas-link-card:hover { border-color: var(--accent); }
+.flc-icon {
+    width: 52px; height: 52px; flex-shrink: 0;
+    background: var(--accent-light); border: 1px solid rgba(99,102,241,0.25);
+    border-radius: var(--r); display: flex; align-items: center; justify-content: center;
+    font-size: 1.6em; font-weight: 800; color: var(--accent);
+}
+.flc-body { flex: 1; }
+.flc-body strong { display: block; font-size: 1em; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.flc-body p { font-size: 0.83em; color: var(--text-2); line-height: 1.6; margin: 0; }
+.flc-arrow { font-size: 1.3em; color: var(--accent); flex-shrink: 0; }
+
 /* ============================================================
    FOOTER
    ============================================================ */
@@ -1038,6 +1072,7 @@ input  { font-family: inherit; }
     gap: clamp(4px, 1.2vw, 6px);
     padding: clamp(6px, 2vw, 10px);
 }
+#keyboard-simple .btn { min-height: 52px; }
 
 /* ============================================================
    SUPPRESS MATHLIVE VIRTUAL KEYBOARD — we use our own
@@ -1061,7 +1096,7 @@ math-virtual-keyboard {
 .feat-card-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* ── Math formula fractions ─────────────────────────────────── */
-.fc-formula { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 3px; font-style: italic; font-size: 1em; }
+.fc-formula { display: block; text-align: center; line-height: 2.4; font-style: italic; font-size: 1em; }
 .mf { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 2px; }
 .mf-n, .mf-d { padding: 1px 6px; line-height: 1.35; font-size: 0.9em; white-space: nowrap; }
 .mf-n { border-bottom: 1.5px solid var(--accent); }

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Reference — Mathics</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Formulas page layout ── */
+        .fref-hero {
+            padding: clamp(52px, 8vw, 80px) 0 clamp(32px, 5vw, 52px);
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+        .fref-hero h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 800; color: var(--text); margin-bottom: 12px; letter-spacing: -0.03em; }
+        .fref-hero p  { font-size: 0.95em; color: var(--text-2); max-width: 520px; margin: 0 auto 24px; line-height: 1.7; }
+        .fref-back { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 30px; text-decoration: none; color: var(--text-2); font-size: 0.82em; font-weight: 600; transition: all var(--tr); }
+        .fref-back:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* ── Category sections ── */
+        .fref-main { padding: clamp(32px, 6vw, 64px) 0; }
+        .fref-category { margin-bottom: clamp(36px, 6vw, 60px); }
+        .fcat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .fcat-icon { width: 36px; height: 36px; background: var(--accent-light); border: 1px solid rgba(99,102,241,0.25); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 1em; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+        .fcat-title { font-size: 1em; font-weight: 700; color: var(--text); }
+        .fcat-sub   { font-size: 0.78em; color: var(--text-3); margin-top: 2px; }
+
+        /* ── Formula cards grid ── */
+        .fcat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: clamp(10px, 2vw, 16px); }
+        .fcard {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r);
+            padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
+            box-shadow: var(--sh-sm); transition: border-color var(--tr), box-shadow var(--tr);
+        }
+        [data-theme="dark"] .fcard { background: #111113; border-color: #27272a; }
+        .fcard:hover { border-color: rgba(99,102,241,0.35); box-shadow: var(--sh); }
+        .fcard-name { font-size: 0.72em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); }
+        .fcard-display {
+            font-style: italic; font-size: 0.95em; color: var(--text);
+            text-align: center; line-height: 2.2;
+            padding: 6px 0;
+        }
+        .fcard-desc { font-size: 0.78em; color: var(--text-2); line-height: 1.6; }
+        .fcard-use {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: auto; padding: 8px 14px; background: var(--accent-light);
+            border: 1px solid rgba(99,102,241,0.25); border-radius: var(--r-sm);
+            color: var(--accent); font-size: 0.78em; font-weight: 700;
+            cursor: pointer; transition: all var(--tr); text-align: left;
+            width: fit-content;
+        }
+        .fcard-use:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .fcard-use-info { font-size: 0.74em; color: var(--text-3); margin-top: 4px; }
+
+        /* Reuse formula display classes from main page */
+        .mf { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 2px; }
+        .mf-n, .mf-d { padding: 1px 6px; line-height: 1.35; font-size: 0.9em; white-space: nowrap; }
+        .mf-n { border-bottom: 1.5px solid var(--accent); }
+        .mf-sqrt { position: relative; display: inline-block; padding: 0 2px 0 14px; }
+        .mf-sqrt::before { content: '√'; position: absolute; left: 0; bottom: -2px; font-size: 1.1em; font-style: normal; line-height: 1; }
+        .mf-sqrt::after { content: ''; position: absolute; top: 1px; left: 12px; right: 0; border-top: 1.5px solid currentColor; }
+
+        @media (min-width: 768px) { .fcat-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); } }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-inner">
+            <a class="nav-brand" href="index.html">
+                <span class="brand-symbol">∑</span>
+                <span class="brand-name">Mathics</span>
+                <span class="brand-tag">Advanced Suite</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#calculator" class="nav-link">Calculator</a>
+                <a href="index.html#features" class="nav-link">Features</a>
+                <a href="index.html#about" class="nav-link">About</a>
+            </div>
+            <div class="nav-controls">
+                <button class="theme-toggle" id="theme-toggle" title="Switch theme">
+                    <span class="theme-icon">☀️</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="fref-hero">
+        <div class="container">
+            <div class="section-badge" style="display:inline-block;margin-bottom:16px;">Formula Reference</div>
+            <h1>All the Formulas You Need</h1>
+            <p>A complete reference library of mathematical formulas — from GCSE to A-Level and beyond. Click <strong>Use in Calculator</strong> on any formula to load it directly.</p>
+            <a href="index.html" class="fref-back">← Back to Calculator</a>
+        </div>
+    </div>
+
+    <main class="fref-main">
+    <div class="container">
+
+        <!-- ════ ALGEBRA ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">𝑥</div>
+                <div>
+                    <div class="fcat-title">Algebra</div>
+                    <div class="fcat-sub">Equations, expressions, roots</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Quadratic Formula</div>
+                    <div class="fcard-display">
+                        <em>x</em> =
+                        <span class="mf"><span class="mf-n">−<em>b</em> ± <span class="mf-sqrt"><em>b</em><sup>2</sup> − 4<em>ac</em></span></span><span class="mf-d">2<em>a</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Solves any quadratic <em>ax</em>² + <em>bx</em> + <em>c</em> = 0. The discriminant Δ = <em>b</em>² − 4<em>ac</em> tells you how many real solutions exist.</div>
+                    <button class="fcard-use" onclick="loadFormula('equations','x^2 + 5x + 6 = 0','equations-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Equation Solver</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Difference of Two Squares</div>
+                    <div class="fcard-display">
+                        <em>a</em><sup>2</sup> − <em>b</em><sup>2</sup> = (<em>a</em> + <em>b</em>)(<em>a</em> − <em>b</em>)
+                    </div>
+                    <div class="fcard-desc">Any expression of the form <em>a</em>² − <em>b</em>² factors into two conjugate binomials.</div>
+                    <button class="fcard-use" onclick="loadFormula('factorise','x^2 - 9','factorise-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Factorise tool</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Perfect Square Trinomial</div>
+                    <div class="fcard-display">
+                        (<em>a</em> + <em>b</em>)<sup>2</sup> = <em>a</em><sup>2</sup> + 2<em>ab</em> + <em>b</em><sup>2</sup>
+                    </div>
+                    <div class="fcard-desc">Expanding the square of a binomial. Useful for completing the square.</div>
+                    <button class="fcard-use" onclick="loadFormula('expand','(x + 3)^2','expand-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Expand tool</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Sum of Cubes</div>
+                    <div class="fcard-display">
+                        <em>a</em><sup>3</sup> + <em>b</em><sup>3</sup> = (<em>a</em> + <em>b</em>)(<em>a</em><sup>2</sup> − <em>ab</em> + <em>b</em><sup>2</sup>)
+                    </div>
+                    <div class="fcard-desc">Factorises a sum of cubes. The difference of cubes reverses the sign: <em>a</em>³ − <em>b</em>³ = (<em>a</em> − <em>b</em>)(<em>a</em>² + <em>ab</em> + <em>b</em>²).</div>
+                    <button class="fcard-use" onclick="loadFormula('factorise','x^3 + 8','factorise-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Factorise tool</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Sum of Roots (Vieta's)</div>
+                    <div class="fcard-display">
+                        <em>x</em><sub>1</sub> + <em>x</em><sub>2</sub> =
+                        <span class="mf"><span class="mf-n">−<em>b</em></span><span class="mf-d"><em>a</em></span></span>
+                        &ensp;,&ensp;
+                        <em>x</em><sub>1</sub><em>x</em><sub>2</sub> =
+                        <span class="mf"><span class="mf-n"><em>c</em></span><span class="mf-d"><em>a</em></span></span>
+                    </div>
+                    <div class="fcard-desc">For <em>ax</em>² + <em>bx</em> + <em>c</em> = 0, the sum and product of roots without solving explicitly.</div>
+                    <button class="fcard-use" onclick="loadFormula('equations','2x^2 + 7x + 3 = 0','equations-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Equation Solver</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Completing the Square</div>
+                    <div class="fcard-display">
+                        <em>ax</em><sup>2</sup> + <em>bx</em> + <em>c</em> = <em>a</em>(<em>x</em> +
+                        <span class="mf"><span class="mf-n"><em>b</em></span><span class="mf-d">2<em>a</em></span></span>)<sup>2</sup>
+                        −
+                        <span class="mf"><span class="mf-n"><em>b</em><sup>2</sup> − 4<em>ac</em></span><span class="mf-d">4<em>a</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Rewrites a quadratic in vertex form, useful for finding the minimum/maximum.</div>
+                    <button class="fcard-use" onclick="loadFormula('equations','x^2 + 6x + 5 = 0','equations-input')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Equation Solver</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ TRIGONOMETRY ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">θ</div>
+                <div>
+                    <div class="fcat-title">Trigonometry</div>
+                    <div class="fcat-sub">Angles, triangles, identities</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Pythagorean Identity</div>
+                    <div class="fcard-display">sin<sup>2</sup>(θ) + cos<sup>2</sup>(θ) = 1</div>
+                    <div class="fcard-desc">The most fundamental trig identity, valid for all angles θ. Useful for simplifying trig expressions.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','sin(30)^2 + cos(30)^2','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Sine Rule</div>
+                    <div class="fcard-display">
+                        <span class="mf"><span class="mf-n"><em>a</em></span><span class="mf-d">sin <em>A</em></span></span>
+                        =
+                        <span class="mf"><span class="mf-n"><em>b</em></span><span class="mf-d">sin <em>B</em></span></span>
+                        =
+                        <span class="mf"><span class="mf-n"><em>c</em></span><span class="mf-d">sin <em>C</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Relates each side of a triangle to the sine of its opposite angle. Use when you know 2 angles and 1 side, or 2 sides and a non-included angle.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Cosine Rule</div>
+                    <div class="fcard-display">
+                        <em>c</em><sup>2</sup> = <em>a</em><sup>2</sup> + <em>b</em><sup>2</sup> − 2<em>ab</em> cos(<em>C</em>)
+                    </div>
+                    <div class="fcard-desc">Generalises Pythagoras for any triangle. Use when you know 2 sides and the included angle, or all 3 sides.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Area of a Triangle</div>
+                    <div class="fcard-display">
+                        <em>A</em> =
+                        <span class="mf"><span class="mf-n">1</span><span class="mf-d">2</span></span>
+                        <em>ab</em> sin(<em>C</em>)
+                    </div>
+                    <div class="fcard-desc">Area using two sides and the included angle. Works for any triangle when you know two sides and the angle between them.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','0.5 * 5 * 8 * sin(60)','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Double Angle — Sine</div>
+                    <div class="fcard-display">sin(2θ) = 2 sin(θ) cos(θ)</div>
+                    <div class="fcard-desc">Express double angle in terms of single angles. Useful for integration and simplification.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','2*sin(30)*cos(30)','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Double Angle — Cosine</div>
+                    <div class="fcard-display">cos(2θ) = cos<sup>2</sup>(θ) − sin<sup>2</sup>(θ)</div>
+                    <div class="fcard-desc">Equivalently: cos(2θ) = 2cos²(θ) − 1 = 1 − 2sin²(θ).</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','cos(2*45)','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ GEOMETRY ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">○</div>
+                <div>
+                    <div class="fcat-title">Geometry</div>
+                    <div class="fcat-sub">Areas, volumes, perimeters</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Circle — Area &amp; Circumference</div>
+                    <div class="fcard-display">
+                        <em>A</em> = π<em>r</em><sup>2</sup> &ensp;,&ensp; <em>C</em> = 2π<em>r</em>
+                    </div>
+                    <div class="fcard-desc">Area enclosed by and circumference of a circle with radius <em>r</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','pi * 5^2','')">⚡ Area (r=5)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Sphere — Volume &amp; Surface Area</div>
+                    <div class="fcard-display">
+                        <em>V</em> =
+                        <span class="mf"><span class="mf-n">4</span><span class="mf-d">3</span></span>
+                        π<em>r</em><sup>3</sup>
+                        &ensp;,&ensp;
+                        <em>A</em> = 4π<em>r</em><sup>2</sup>
+                    </div>
+                    <div class="fcard-desc">Volume and surface area of a sphere of radius <em>r</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','(4/3)*pi*3^3','')">⚡ Volume (r=3)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Cylinder</div>
+                    <div class="fcard-display">
+                        <em>V</em> = π<em>r</em><sup>2</sup><em>h</em>
+                    </div>
+                    <div class="fcard-desc">Volume of a cylinder with base radius <em>r</em> and height <em>h</em>. Surface area = 2π<em>r</em>(<em>r</em> + <em>h</em>).</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','pi * 4^2 * 10','')">⚡ Volume (r=4, h=10)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Cone</div>
+                    <div class="fcard-display">
+                        <em>V</em> =
+                        <span class="mf"><span class="mf-n">1</span><span class="mf-d">3</span></span>
+                        π<em>r</em><sup>2</sup><em>h</em>
+                    </div>
+                    <div class="fcard-desc">Volume of a cone with base radius <em>r</em> and perpendicular height <em>h</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','(1/3)*pi*3^2*7','')">⚡ Volume (r=3, h=7)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Trapezium Area</div>
+                    <div class="fcard-display">
+                        <em>A</em> =
+                        <span class="mf"><span class="mf-n">(<em>a</em> + <em>b</em>)</span><span class="mf-d">2</span></span>
+                        <em>h</em>
+                    </div>
+                    <div class="fcard-desc">Area of a trapezium with parallel sides <em>a</em> and <em>b</em>, and perpendicular height <em>h</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','((5 + 9) / 2) * 4','')">⚡ Area (a=5, b=9, h=4)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Pythagoras' Theorem</div>
+                    <div class="fcard-display">
+                        <em>a</em><sup>2</sup> + <em>b</em><sup>2</sup> = <em>c</em><sup>2</sup>
+                    </div>
+                    <div class="fcard-desc">In a right-angled triangle, the square of the hypotenuse equals the sum of the squares of the other two sides.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','sqrt(3^2 + 4^2)','')">⚡ Hypotenuse (a=3, b=4)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ SIMULTANEOUS EQUATIONS ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">2×</div>
+                <div>
+                    <div class="fcat-title">Simultaneous Equations</div>
+                    <div class="fcat-sub">Two equations, two unknowns</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Cramer's Rule</div>
+                    <div class="fcard-display">
+                        <em>x</em> =
+                        <span class="mf"><span class="mf-n"><em>D</em><sub>x</sub></span><span class="mf-d"><em>D</em></span></span>
+                        &ensp;,&ensp;
+                        <em>y</em> =
+                        <span class="mf"><span class="mf-n"><em>D</em><sub>y</sub></span><span class="mf-d"><em>D</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Used internally to solve systems of linear equations. <em>D</em> is the determinant of the coefficient matrix; <em>D<sub>x</sub></em> and <em>D<sub>y</sub></em> replace the respective column with constants.</div>
+                    <button class="fcard-use" onclick="loadFormula('simultaneous','2x + 3y = 13','sim-eq1','x - y = -1','sim-eq2')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Simultaneous Solver</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Substitution Method</div>
+                    <div class="fcard-display">
+                        If <em>y</em> = <em>mx</em> + <em>c</em>, substitute into the other equation to eliminate <em>y</em>
+                    </div>
+                    <div class="fcard-desc">Express one variable in terms of the other, then substitute. Especially useful when one equation is already solved for a variable.</div>
+                    <button class="fcard-use" onclick="loadFormula('simultaneous','y = 2x + 1','sim-eq1','3x + y = 16','sim-eq2')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Simultaneous Solver</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Elimination Method</div>
+                    <div class="fcard-display">
+                        Multiply equations so coefficients of one variable are equal, then subtract
+                    </div>
+                    <div class="fcard-desc">Multiply one or both equations by a constant to align coefficients, then add/subtract to eliminate one variable.</div>
+                    <button class="fcard-use" onclick="loadFormula('simultaneous','3x + 4y = 25','sim-eq1','2x - y = 4','sim-eq2')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Simultaneous Solver</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ CALCULUS ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">∫</div>
+                <div>
+                    <div class="fcat-title">Calculus</div>
+                    <div class="fcat-sub">Differentiation and integration rules</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Power Rule — Differentiation</div>
+                    <div class="fcard-display">
+                        <span class="mf"><span class="mf-n"><em>d</em></span><span class="mf-d"><em>dx</em></span></span>
+                        (<em>x</em><sup><em>n</em></sup>) = <em>n x</em><sup><em>n</em>−1</sup>
+                    </div>
+                    <div class="fcard-desc">The derivative of <em>x</em> to any power <em>n</em>. E.g. d/dx(x³) = 3x².</div>
+                    <button class="fcard-use" onclick="loadFormula('function','3*x^2 + 2*x + 1','function-def')">⚡ Evaluate f(x)</button>
+                    <div class="fcard-use-info">Opens Function Evaluator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Product Rule</div>
+                    <div class="fcard-display">
+                        (<em>uv</em>)′ = <em>u</em>′<em>v</em> + <em>uv</em>′
+                    </div>
+                    <div class="fcard-desc">The derivative of a product of two functions. Differentiate each factor in turn while keeping the other fixed.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Chain Rule</div>
+                    <div class="fcard-display">
+                        <span class="mf"><span class="mf-n"><em>d</em></span><span class="mf-d"><em>dx</em></span></span>
+                        <em>f</em>(<em>g</em>(<em>x</em>)) = <em>f</em>′(<em>g</em>(<em>x</em>)) · <em>g</em>′(<em>x</em>)
+                    </div>
+                    <div class="fcard-desc">Differentiate a composite function by multiplying the outer derivative (at the inner value) by the inner derivative.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Power Rule — Integration</div>
+                    <div class="fcard-display">
+                        ∫ <em>x</em><sup><em>n</em></sup> d<em>x</em> =
+                        <span class="mf"><span class="mf-n"><em>x</em><sup><em>n</em>+1</sup></span><span class="mf-d"><em>n</em>+1</span></span>
+                        + <em>C</em>
+                    </div>
+                    <div class="fcard-desc">Integral of x to a power (n ≠ −1). E.g. ∫x³ dx = x⁴/4 + C.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Newton–Raphson Method</div>
+                    <div class="fcard-display">
+                        <em>x</em><sub><em>n</em>+1</sub> = <em>x</em><sub><em>n</em></sub> −
+                        <span class="mf"><span class="mf-n"><em>f</em>(<em>x</em><sub><em>n</em></sub>)</span><span class="mf-d"><em>f</em>′(<em>x</em><sub><em>n</em></sub>)</span></span>
+                    </div>
+                    <div class="fcard-desc">Iterative method for finding roots of a function. Start with an initial guess <em>x</em><sub>0</sub> and apply repeatedly until convergence.</div>
+                    <button class="fcard-use" onclick="loadFormula('function','x^3 - 2','function-def')">⚡ Find root of x³−2</button>
+                    <div class="fcard-use-info">Opens Function Evaluator → Solve for x</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Fundamental Theorem of Calculus</div>
+                    <div class="fcard-display">
+                        <span class="mf"><span class="mf-n"><em>d</em></span><span class="mf-d"><em>dx</em></span></span>
+                        ∫<sub><em>a</em></sub><sup><em>x</em></sup> <em>f</em>(<em>t</em>) d<em>t</em> = <em>f</em>(<em>x</em>)
+                    </div>
+                    <div class="fcard-desc">Differentiation and integration are inverse operations. The derivative of an integral (from a constant to x) recovers the original function.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','','')">⚡ Use in Calculator</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ STATISTICS ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">σ</div>
+                <div>
+                    <div class="fcat-title">Statistics &amp; Data</div>
+                    <div class="fcat-sub">Mean, spread, distributions</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Mean (Average)</div>
+                    <div class="fcard-display">
+                        <em>x̄</em> =
+                        <span class="mf"><span class="mf-n">Σ<em>x</em></span><span class="mf-d"><em>n</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Sum all values and divide by the count. The arithmetic mean is the most common measure of central tendency.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','(4 + 7 + 2 + 9 + 3) / 5','')">⚡ Mean of 5 values</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Standard Deviation</div>
+                    <div class="fcard-display">
+                        σ =
+                        <span class="mf-sqrt">
+                            <span class="mf"><span class="mf-n">Σ(<em>x</em> − <em>x̄</em>)<sup>2</sup></span><span class="mf-d"><em>n</em></span></span>
+                        </span>
+                    </div>
+                    <div class="fcard-desc">Measures how spread out data is from the mean. A higher σ means more spread. The sample standard deviation uses <em>n</em>−1.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','sqrt(((2-5)^2 + (4-5)^2 + (5-5)^2 + (8-5)^2 + (6-5)^2) / 5)','')">⚡ σ of {2,4,5,8,6}</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Normal Distribution (PDF)</div>
+                    <div class="fcard-display">
+                        <em>f</em>(<em>x</em>) =
+                        <span class="mf"><span class="mf-n">1</span><span class="mf-d">σ<span class="mf-sqrt">2π</span></span></span>
+                        <em>e</em><sup>−½((<em>x</em>−μ)/σ)<sup>2</sup></sup>
+                    </div>
+                    <div class="fcard-desc">The bell-curve probability density. Symmetrical around mean μ with spread σ. Used in probability, hypothesis testing, and grading.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','(1/(1*sqrt(2*pi)))*e^(-0.5*((3-5)/1)^2)','')">⚡ f(3) with μ=5, σ=1</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Binomial Probability</div>
+                    <div class="fcard-display">
+                        P(<em>X</em> = <em>r</em>) =
+                        <sup><em>n</em></sup>C<sub><em>r</em></sub>
+                        <em>p</em><sup><em>r</em></sup>(1−<em>p</em>)<sup><em>n</em>−<em>r</em></sup>
+                    </div>
+                    <div class="fcard-desc">Probability of exactly <em>r</em> successes in <em>n</em> independent trials, each with probability <em>p</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','combinations(10, 3) * 0.4^3 * 0.6^7','')">⚡ P(X=3), n=10, p=0.4</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ PHYSICS / APPLIED ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">⚡</div>
+                <div>
+                    <div class="fcat-title">Physics &amp; Applied Maths</div>
+                    <div class="fcat-sub">Essential equations from physics</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Newton's Second Law</div>
+                    <div class="fcard-display"><em>F</em> = <em>ma</em></div>
+                    <div class="fcard-desc">Force (N) = mass (kg) × acceleration (m/s²). The net force on an object equals its rate of change of momentum.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','70 * 9.8','')">⚡ Weight (m=70kg)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Kinetic Energy</div>
+                    <div class="fcard-display">
+                        <em>KE</em> =
+                        <span class="mf"><span class="mf-n">1</span><span class="mf-d">2</span></span>
+                        <em>mv</em><sup>2</sup>
+                    </div>
+                    <div class="fcard-desc">Energy of an object in motion. Mass in kg, velocity in m/s, energy in joules.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','0.5 * 2 * 15^2','')">⚡ KE (m=2, v=15)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Gravitational PE</div>
+                    <div class="fcard-display"><em>PE</em> = <em>mgh</em></div>
+                    <div class="fcard-desc">Gravitational potential energy stored in an object at height <em>h</em>. Use g = 9.81 m/s².</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','5 * 9.81 * 12','')">⚡ PE (m=5, h=12)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">SUVAT — Distance</div>
+                    <div class="fcard-display">
+                        <em>s</em> = <em>ut</em> +
+                        <span class="mf"><span class="mf-n">1</span><span class="mf-d">2</span></span>
+                        <em>at</em><sup>2</sup>
+                    </div>
+                    <div class="fcard-desc">Distance under constant acceleration. <em>u</em> = initial velocity, <em>a</em> = acceleration, <em>t</em> = time.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','0*3 + 0.5*9.81*3^2','')">⚡ Free fall (t=3s)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Compound Interest</div>
+                    <div class="fcard-display">
+                        <em>A</em> = <em>P</em>(1 +
+                        <span class="mf"><span class="mf-n"><em>r</em></span><span class="mf-d"><em>n</em></span></span>
+                        )<sup><em>nt</em></sup>
+                    </div>
+                    <div class="fcard-desc">Final amount <em>A</em> after <em>t</em> years at annual rate <em>r</em>, compounded <em>n</em> times per year with principal <em>P</em>.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','1000*(1 + 0.05/12)^(12*5)','')">⚡ £1000, 5%, 5yr monthly</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">E = mc²</div>
+                    <div class="fcard-display"><em>E</em> = <em>mc</em><sup>2</sup></div>
+                    <div class="fcard-desc">Mass-energy equivalence. <em>c</em> ≈ 3 × 10⁸ m/s. Shows that a small mass represents enormous energy.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','1 * (3e8)^2','')">⚡ E for m=1 kg</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ════ FINANCIAL ════ -->
+        <section class="fref-category">
+            <div class="fcat-header">
+                <div class="fcat-icon">%</div>
+                <div>
+                    <div class="fcat-title">Financial &amp; General</div>
+                    <div class="fcat-sub">Percentages, growth, interest</div>
+                </div>
+            </div>
+            <div class="fcat-grid">
+
+                <div class="fcard">
+                    <div class="fcard-name">Percentage Change</div>
+                    <div class="fcard-display">
+                        %Δ =
+                        <span class="mf"><span class="mf-n">New − Old</span><span class="mf-d">Old</span></span>
+                        × 100
+                    </div>
+                    <div class="fcard-desc">Expresses a change as a percentage of the original value. Positive = increase, negative = decrease.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','((85 - 70) / 70) * 100','')">⚡ 70 → 85</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Simple Interest</div>
+                    <div class="fcard-display"><em>A</em> = <em>P</em>(1 + <em>rt</em>)</div>
+                    <div class="fcard-desc">Interest calculated only on the original principal <em>P</em>, at rate <em>r</em> per year for <em>t</em> years.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','500 * (1 + 0.04 * 3)','')">⚡ £500, 4%, 3yr</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Exponential Growth / Decay</div>
+                    <div class="fcard-display">
+                        <em>N</em>(<em>t</em>) = <em>N</em><sub>0</sub> <em>e</em><sup><em>kt</em></sup>
+                    </div>
+                    <div class="fcard-desc"><em>k</em> > 0 gives exponential growth, <em>k</em> < 0 gives decay (e.g. radioactive decay, population growth).</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','200 * e^(0.03 * 10)','')">⚡ N₀=200, k=0.03, t=10</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+                <div class="fcard">
+                    <div class="fcard-name">Half-Life</div>
+                    <div class="fcard-display">
+                        <em>t</em><sub>½</sub> =
+                        <span class="mf"><span class="mf-n">ln 2</span><span class="mf-d"><em>λ</em></span></span>
+                    </div>
+                    <div class="fcard-desc">Time for a quantity to reduce to half its initial value. <em>λ</em> is the decay constant. Used in nuclear physics and pharmacology.</div>
+                    <button class="fcard-use" onclick="loadFormula('basic','log(2) / 0.1','')">⚡ Half-life (λ=0.1)</button>
+                    <div class="fcard-use-info">Opens Basic Calculator</div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div style="padding: 32px 0; text-align: center; border-top: 1px solid #27272a;">
+                <a href="index.html" style="color: var(--accent); text-decoration: none; font-weight: 600;">← Return to Calculator</a>
+                <p style="font-size: 0.75em; color: #3f3f46; margin-top: 12px;">© 2025 Mathics · Powered by math.js &amp; MathLive · Open source mathematics</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme toggle
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            const saved = localStorage.getItem('mathics-theme');
+            if (saved) document.documentElement.setAttribute('data-theme', saved);
+            toggle.querySelector('.theme-icon').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+            toggle.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                toggle.querySelector('.theme-icon').textContent = isDark ? '🌙' : '☀️';
+                try { localStorage.setItem('mathics-theme', isDark ? 'light' : 'dark'); } catch {}
+            });
+        }
+
+        function loadFormula(mode, expression, inputId, expression2, inputId2) {
+            const payload = { mode, expression, inputId };
+            if (expression2 && inputId2) payload.expression2 = expression2, payload.inputId2 = inputId2;
+            try { localStorage.setItem('mathics-formula-load', JSON.stringify(payload)); } catch {}
+            window.location.href = 'index.html#calculator';
+        }
+    </script>
+</body>
+</html>
